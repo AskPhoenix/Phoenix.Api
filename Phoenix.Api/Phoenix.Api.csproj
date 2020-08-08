@@ -4,7 +4,11 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Version>0.20.8.4</Version>
+    <Authors>AskPhoenix</Authors>
   </PropertyGroup>
 
   <ItemGroup>
