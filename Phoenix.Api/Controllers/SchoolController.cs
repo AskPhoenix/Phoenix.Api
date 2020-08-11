@@ -121,7 +121,9 @@ namespace Phoenix.Api.Controllers
                 Group = course.Group,
                 SubCourse = course.SubCourse,
                 Level = course.Level,
-                Info = course.Info
+                Info = course.Info,
+                FirstDate = course.FirstDate,
+                LastDate = course.LastDate,
             }).ToListAsync();
         }
 

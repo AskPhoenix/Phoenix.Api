@@ -9,8 +9,8 @@ namespace Phoenix.Api.Models.Api
     {
         public int id { get; set; }
         public DayOfWeek DayOfWeek { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        public DateTimeOffset StartTime { get; set; }
+        public DateTimeOffset EndTime { get; set; }
         public string Info { get; set; }
         public ICourse Course { get; set; }
         public IClassroom Classroom { get; set; }

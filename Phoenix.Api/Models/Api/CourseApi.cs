@@ -14,6 +14,8 @@ namespace Phoenix.Api.Models.Api
         public string Level { get; set; }
         public string Group { get; set; }
         public string Info { get; set; }
+        public DateTimeOffset FirstDate { get; set; }
+        public DateTimeOffset LastDate { get; set; }
 
         public SchoolApi School { get; set; }
         ISchool ICourse.School => this.School;

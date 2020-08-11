@@ -44,6 +44,8 @@ namespace Phoenix.Api.Controllers
                 Group = course.Group,
                 Level = course.Level,
                 Info = course.Info,
+                FirstDate = course.FirstDate,
+                LastDate = course.LastDate,
                 School = new SchoolApi
                 {
                     id = course.School.Id,
@@ -68,6 +70,8 @@ namespace Phoenix.Api.Controllers
                 Group = course.Group,
                 Level = course.Level,
                 Info = course.Info,
+                FirstDate = course.FirstDate,
+                LastDate = course.LastDate,
                 School = new SchoolApi
                 {
                     id = course.School.Id,

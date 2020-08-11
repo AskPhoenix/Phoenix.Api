@@ -51,7 +51,9 @@ namespace Phoenix.Api.Controllers
                     SubCourse = lecture.Course.SubCourse,
                     Level = lecture.Course.Level,
                     Group = lecture.Course.Group,
-                    Info = lecture.Course.Info
+                    Info = lecture.Course.Info,
+                    FirstDate = lecture.Course.FirstDate,
+                    LastDate = lecture.Course.LastDate,
                 },
                 Classroom = lecture.Classroom != null
                     ? new ClassroomApi
@@ -93,7 +95,9 @@ namespace Phoenix.Api.Controllers
                     SubCourse = lecture.Course.SubCourse,
                     Level = lecture.Course.Level,
                     Group = lecture.Course.Group,
-                    Info = lecture.Course.Info
+                    Info = lecture.Course.Info,
+                    FirstDate = lecture.Course.FirstDate,
+                    LastDate = lecture.Course.LastDate,
                 },
                 Classroom = lecture.Classroom != null
                     ? new ClassroomApi
@@ -218,7 +222,9 @@ namespace Phoenix.Api.Controllers
                     SubCourse = lecture.Course.SubCourse,
                     Level = lecture.Course.Level,
                     Group = lecture.Course.Group,
-                    Info = lecture.Course.Info
+                    Info = lecture.Course.Info,
+                    FirstDate = lecture.Course.FirstDate,
+                    LastDate = lecture.Course.LastDate,
                 },
                 Classroom = lecture.Classroom != null
                     ? new ClassroomApi

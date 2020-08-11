@@ -44,7 +44,9 @@ namespace Phoenix.Api.Controllers
                     SubCourse = schedule.Course.SubCourse,
                     Level = schedule.Course.Level,
                     Group = schedule.Course.Group,
-                    Info = schedule.Course.Info
+                    Info = schedule.Course.Info,
+                    FirstDate = schedule.Course.FirstDate,
+                    LastDate = schedule.Course.LastDate,
                 },
                 Classroom = new ClassroomApi
                 {
@@ -75,7 +77,9 @@ namespace Phoenix.Api.Controllers
                     SubCourse = schedule.Course.SubCourse,
                     Level = schedule.Course.Level,
                     Group = schedule.Course.Group,
-                    Info = schedule.Course.Info
+                    Info = schedule.Course.Info,
+                    FirstDate = schedule.Course.FirstDate,
+                    LastDate = schedule.Course.LastDate,
                 },
                 Classroom = new ClassroomApi
                 {
