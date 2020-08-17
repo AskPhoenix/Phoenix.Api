@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.7" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Phoenix.DataHandle" Version="1.0.3" />
-    <PackageReference Include="Talagozis.AspNetCore" Version="1.20.7.191" />
+    <PackageReference Include="Phoenix.DataHandle" Version="1.0.6" />
+    <PackageReference Include="Talagozis.AspNetCore" Version="1.20.8.142" />
     <PackageReference Include="Talagozis.Logging" Version="1.20.7.12" />
   </ItemGroup>
 

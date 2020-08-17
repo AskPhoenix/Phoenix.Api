@@ -16,6 +16,7 @@ namespace Phoenix.Api.Models.Api
         public bool PhoneNumberConfirmed { get; set; }
         public string FacebookId { get; set; }
         public DateTime RegisteredAt { get; set; }
+        public int CreatedApplicationType { get; set; }
 
         public IUser User { get; set; }
         public IEnumerable<IAspNetUserRoles> Roles { get; set; }

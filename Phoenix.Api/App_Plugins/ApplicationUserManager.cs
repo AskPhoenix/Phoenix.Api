@@ -12,8 +12,33 @@ namespace Phoenix.Api.App_Plugins
 {
     public class ApplicationUserManager : UserManager<ApplicationUser>, IUserManager<ApplicationUser>
     {
+        protected internal new ApplicationStore Store => base.Store as ApplicationStore ?? throw new NotSupportedException($"{nameof(base.Store)} is not a {nameof(ApplicationStore)} type.");
+
         public ApplicationUserManager(IUserStore<ApplicationUser> store, IOptions<IdentityOptions> optionsAccessor, IPasswordHasher<ApplicationUser> passwordHasher, IEnumerable<IUserValidator<ApplicationUser>> userValidators, IEnumerable<IPasswordValidator<ApplicationUser>> passwordValidators, ILookupNormalizer keyNormalizer, IdentityErrorDescriber errors, IServiceProvider services, ILogger<ApplicationUserManager> logger) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
         {
+        }
+
+        async Task<IdentityUser<int>> IUserManager<ApplicationUser>.FindByNameAsync(string userName)
+        {
+            return await this.FindByNameAsync(userName);
+        }
+
+        Task<IdentityResult> IUserManager<ApplicationUser>.CreateAsync<TIdentity>(TIdentity user, string password)
+        {
+            ApplicationUser applicationUser = user as ApplicationUser ?? new ApplicationUser(user);
+
+            applicationUser.CreatedAt = DateTime.Now;
+            if (applicationUser.User == null)
+                applicationUser.User = new User();
+
+            return this.CreateAsync(applicationUser, password);
+        }
+
+        Task<string> IUserManager<ApplicationUser>.GenerateEmailConfirmationTokenAsync<TIdentity>(TIdentity user)
+        {
+            ApplicationUser applicationUser = user as ApplicationUser ?? new ApplicationUser(user);
+
+            return base.GenerateEmailConfirmationTokenAsync(applicationUser);
         }
 
         public override Task<IdentityResult> CreateAsync(ApplicationUser user)
@@ -25,22 +50,14 @@ namespace Phoenix.Api.App_Plugins
             return base.CreateAsync(user);
         }
 
-        public Task<IdentityResult> CreateAsync<TIdentity>(TIdentity user, string password) where TIdentity : IdentityUser<int>
+        public Task<ApplicationUser> FindByPhoneNumberAsync(string phoneNumber)
         {
-            ApplicationUser applicationUser = user as ApplicationUser ?? new ApplicationUser(user);
-
-            applicationUser.CreatedAt = DateTime.Now;
-            if (applicationUser.User == null)
-                applicationUser.User = new User();
-
-            return base.CreateAsync(applicationUser, password);
+            return this.Store.FindByPhoneNumberAsync(phoneNumber);
         }
 
-        public Task<string> GenerateEmailConfirmationTokenAsync<TIdentity>(TIdentity user) where TIdentity : IdentityUser<int>
+        public Task<ApplicationUser> FindByFacebookIdAsync(string facebookId)
         {
-            ApplicationUser applicationUser = user as ApplicationUser ?? new ApplicationUser(user);
-
-            return base.GenerateEmailConfirmationTokenAsync(applicationUser);
+            return this.Store.FindByFacebookIdAsync(facebookId);
         }
     }
 }

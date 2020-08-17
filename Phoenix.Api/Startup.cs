@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Phoenix.Api.App_Plugins;
@@ -40,9 +39,9 @@ namespace Phoenix.Api
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequiredLength = 6;
-            }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+            }).AddUserStore<ApplicationStore>().AddUserManager<ApplicationUserManager>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
-            services.TryAddScoped<ApplicationUserManager>();
+            //services.TryAddScoped<ApplicationUserManager>();
 
             services.AddTokenAuthentication<UserManagementService>(this._configuration);
 
