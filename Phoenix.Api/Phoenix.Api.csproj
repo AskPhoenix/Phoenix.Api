@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.20.8.23</Version>
+    <Version>0.20.8.25</Version>
     <Authors>AskPhoenix</Authors>
     <UserSecretsId>2764d619-0916-4373-9f80-e0cc75456ce3</UserSecretsId>
   </PropertyGroup>
@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.7" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Phoenix.DataHandle" Version="1.0.7" />
+    <PackageReference Include="Phoenix.DataHandle" Version="1.0.9" />
     <PackageReference Include="Talagozis.AspNetCore" Version="1.20.8.142" />
     <PackageReference Include="Talagozis.Logging" Version="1.20.7.12" />
   </ItemGroup>
