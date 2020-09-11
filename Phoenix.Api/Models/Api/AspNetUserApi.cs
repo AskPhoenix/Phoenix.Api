@@ -18,7 +18,9 @@ namespace Phoenix.Api.Models.Api
         public DateTime RegisteredAt { get; set; }
         public int CreatedApplicationType { get; set; }
 
-        public IUser User { get; set; }
+        public UserApi User { get; set; }
+        IUser IAspNetUsers.User => this.User;
+
         public IEnumerable<IAspNetUserRoles> Roles { get; set; }
     }
 }
