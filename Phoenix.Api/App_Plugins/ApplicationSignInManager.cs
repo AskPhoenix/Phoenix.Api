@@ -12,17 +12,11 @@ namespace Phoenix.Api.App_Plugins
 {
     public class ApplicationSignInManager : SignInManager<ApplicationUser>, ISignInManager<ApplicationUser>
     {
-#if NETSTANDARD2_0
-        public ApplicationSignInManager(ApplicationUserManager userManager, IHttpContextAccessor contextAccessor, IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory, IOptions<IdentityOptions> optionsAccessor, ILogger<SignInManager<ApplicationUser>> logger, IAuthenticationSchemeProvider schemes)
-            : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes)
-            {
-            }
-#elif NETCOREAPP3_1
         public ApplicationSignInManager(ApplicationUserManager userManager, IHttpContextAccessor contextAccessor, IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory, IOptions<IdentityOptions> optionsAccessor, ILogger<SignInManager<ApplicationUser>> logger, IAuthenticationSchemeProvider schemes) 
             : base(userManager, contextAccessor, claimsFactory, optionsAccessor,logger, schemes, new DefaultUserConfirmation<ApplicationUser>())
         {
         }
-#endif
+
         public Task SignInAsync<TIdentity>(TIdentity user, bool isPersistent, string authenticationMethod = null) where TIdentity : IdentityUser<int>
         {
             ApplicationUser applicationUser = user as ApplicationUser ?? new ApplicationUser(user);

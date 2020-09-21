@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,13 +13,14 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class ExerciseController : BaseController
     {
         private readonly ILogger<ExerciseController> _logger;
         private readonly ExerciseRepository _exerciseRepository;
 
-        public ExerciseController(PhoenixContext phoenixContext, ILogger<ExerciseController> logger)
+        public ExerciseController(PhoenixContext phoenixContext, ILogger<ExerciseController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._exerciseRepository = new ExerciseRepository(phoenixContext);
@@ -42,6 +44,8 @@ namespace Phoenix.Api.Controllers
                 {
                     id = exercise.Book.Id,
                     Name = exercise.Book.Name,
+                    Publisher = exercise.Book.Publisher,
+                    Info = exercise.Book.Info
                 },
                 Lecture = new LectureApi
                 {
@@ -54,10 +58,10 @@ namespace Phoenix.Api.Controllers
                     {
                         id = exercise.Lecture.Course.Id
                     },
-                    Classroom = new ClassroomApi
+                    Classroom = exercise.Lecture.Classroom != null ? new ClassroomApi
                     {
                         id = exercise.Lecture.Classroom.Id
-                    }
+                    } : null
                 }
             };
         }
@@ -94,6 +98,8 @@ namespace Phoenix.Api.Controllers
                     {
                         id = exercise.Book.Id,
                         Name = exercise.Book.Name,
+                        Publisher = exercise.Book.Publisher,
+                        Info = exercise.Book.Info
                     }
                     : null,
                 Lecture = exercise.Lecture != null
@@ -154,6 +160,8 @@ namespace Phoenix.Api.Controllers
                     {
                         id = exercise.Book.Id,
                         Name = exercise.Book.Name,
+                        Publisher = exercise.Book.Publisher,
+                        Info = exercise.Book.Info
                     }
                     : null,
                 Lecture = exercise.Lecture != null
@@ -200,7 +208,7 @@ namespace Phoenix.Api.Controllers
             return await studentExercises.Select(studentExercise => new StudentExerciseApi
             {
                 Grade = studentExercise.Grade,
-                Student = studentExercise.Student != null ? new UserApi
+                User = studentExercise.Student != null ? new UserApi
                 {
                     id = studentExercise.Student.AspNetUserId,
                     FirstName = studentExercise.Student.FirstName,
@@ -215,6 +223,52 @@ namespace Phoenix.Api.Controllers
                     },
                 } : null,
             }).ToListAsync();
+        }
+
+
+        [HttpPost("{id}/StudentExercise")]
+        public async Task<StudentExerciseApi> PostStudentExercise(int id, [FromBody] StudentExerciseApi studentExerciseApi)
+        {
+            this._logger.LogInformation($"Api -> Exercise -> {id} -> StudentExercise -> Post");
+
+            if (studentExerciseApi == null)
+                throw new ArgumentNullException(nameof(studentExerciseApi));
+
+            StudentExercise studentExercise = new StudentExercise
+            {
+                ExerciseId = id,
+                Grade = studentExerciseApi.Grade,
+                StudentId = studentExerciseApi.User.id
+            };
+
+            var exercise = await this._exerciseRepository.find(id);
+
+            if (exercise.StudentExercise.Any(a => a.StudentId == studentExercise.StudentId))
+            {
+                var x = exercise.StudentExercise.Single(a => a.StudentId == studentExercise.StudentId);
+                x.Grade = studentExercise.Grade;
+            }
+            else
+            {
+                exercise.StudentExercise.Add(studentExercise);
+            }
+
+            exercise = this._exerciseRepository.update(exercise);
+            studentExercise = exercise.StudentExercise.SingleOrDefault(a => a.StudentId == studentExercise.StudentId);
+
+            return new StudentExerciseApi
+            {
+                Grade = studentExercise.Grade,
+                User = new UserApi
+                {
+                    id = studentExercise.StudentId,
+                },
+                Exercise = new ExerciseApi
+                {
+                    id = studentExercise.ExerciseId
+                }
+            };
+
         }
 
     }

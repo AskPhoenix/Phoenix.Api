@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class CourseController : BaseController
     {
@@ -20,7 +22,7 @@ namespace Phoenix.Api.Controllers
         private readonly Repository<Schedule> _scheduleRepository;
         private readonly Repository<Book> _bookRepository;
 
-        public CourseController(PhoenixContext phoenixContext, ILogger<CourseController> logger)
+        public CourseController(PhoenixContext phoenixContext, ILogger<CourseController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._courseRepository = new Repository<Course>(phoenixContext);
@@ -35,6 +37,7 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation("Api -> Course -> Get");
 
             IQueryable<Course> courses = this._courseRepository.find();
+            courses = courses.Where(a => a.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await courses.Select(course => new CourseApi
             {
@@ -87,6 +90,7 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Lecture");
 
             IQueryable<Lecture> lectures = this._lectureRepository.find().Where(a => a.CourseId == id);
+            lectures = lectures.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await lectures.Select(lecture => new LectureApi
             {
@@ -121,6 +125,7 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Schedule");
 
             IQueryable<Schedule> schedules = this._scheduleRepository.find().Where(a => a.CourseId == id);
+            schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await schedules.Select(schedule => new ScheduleApi
             {
@@ -144,11 +149,14 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Book");
 
             IQueryable<Book> books = this._bookRepository.find().Where(a => a.CourseBook.Any(b => b.CourseId == id));
+            books = books.Where(a => a.CourseBook.Any(c => c.Course.TeacherCourse.Any(b => b.TeacherId == this.userId)));
 
             return await books.Select(book => new BookApi
             {
                 id = book.Id,
                 Name = book.Name,
+                Publisher = book.Publisher,
+                Info = book.Info
             }).ToListAsync();
         }
 

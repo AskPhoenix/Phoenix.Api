@@ -9,14 +9,20 @@ namespace Phoenix.Api.Models.Api
     public class UserApi : IUser, IModelApi
     {
         public int id { get; set; }
-        public IAspNetUsers AspNetUser { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string FullName { get; set; }
-        public IEnumerable<IAttendance> Attendances { get; set; }
+
+        public AspNetUserApi AspNetUser { get; set; }
+        IAspNetUsers IUser.AspNetUser => this.AspNetUser;
+
+        public ICollection<TeacherCourseApi> TeacherCourses { get; set; }
+        IEnumerable<ITeacherCourse> IUser.TeacherCourses => this.TeacherCourses;
+
         public IEnumerable<IStudentCourse> StudentCourses { get; set; }
         public IEnumerable<IStudentExam> StudentExams { get; set; }
         public IEnumerable<IStudentExercise> StudentExercises { get; set; }
-        public IEnumerable<ITeacherCourse> TeacherCourses { get; set; }
+        
+        public IEnumerable<IAttendance> Attendances { get; set; }
     }
 }

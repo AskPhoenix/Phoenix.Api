@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Phoenix.Api.Models.Api;
@@ -11,13 +12,14 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class MaterialController : BaseController
     {
         private readonly ILogger<MaterialController> _logger;
         private readonly Repository<Material> _materialRepository;
 
-        public MaterialController(PhoenixContext phoenixContext, ILogger<MaterialController> logger)
+        public MaterialController(PhoenixContext phoenixContext, ILogger<MaterialController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._materialRepository = new Repository<Material>(phoenixContext);
@@ -40,6 +42,8 @@ namespace Phoenix.Api.Controllers
                 {
                     id = material.Book.Id,
                     Name = material.Book.Name,
+                    Publisher = material.Book.Publisher,
+                    Info = material.Book.Info
                 } : null,
                 Exam = material.Exam != null ? new ExamApi
                 {
@@ -79,6 +83,8 @@ namespace Phoenix.Api.Controllers
                 {
                     id = material.Book.Id,
                     Name = material.Book.Name,
+                    Publisher = material.Book.Publisher,
+                    Info = material.Book.Info
                 } : null,
                 Exam = material.Exam != null ? new ExamApi
                 {
@@ -118,6 +124,8 @@ namespace Phoenix.Api.Controllers
                 {
                     id = material.Book.Id,
                     Name = material.Book.Name,
+                    Publisher = material.Book.Publisher,
+                    Info = material.Book.Info
                 } : null,
                 Exam = material.Exam != null ? new ExamApi
                 {

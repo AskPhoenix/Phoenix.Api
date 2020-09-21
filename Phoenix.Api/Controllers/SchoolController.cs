@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,13 +12,14 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class SchoolController : BaseController
     {
         private readonly ILogger<SchoolController> _logger;
         private readonly SchoolRepository _schoolRepository;
 
-        public SchoolController(PhoenixContext phoenixContext, ILogger<SchoolController> logger)
+        public SchoolController(PhoenixContext phoenixContext, ILogger<SchoolController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._schoolRepository = new SchoolRepository(phoenixContext);
@@ -29,6 +31,7 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation("Api -> School -> Get");
 
             IQueryable<School> schools = this._schoolRepository.find();
+            schools = schools.Where(a => a.Course.Any(b => b.TeacherCourse.Any(c => c.TeacherId == this.userId)));
 
             return await schools.Select(school => new SchoolApi
             {
@@ -37,7 +40,6 @@ namespace Phoenix.Api.Controllers
                 Slug = school.Slug,
                 AddressLine = school.AddressLine,
                 City = school.City,
-                Endpoint = school.Endpoint,
                 FacebookPageId = school.FacebookPageId,
                 Info = school.Info,
             }).ToListAsync();
@@ -57,7 +59,6 @@ namespace Phoenix.Api.Controllers
                 Slug = school.Slug,
                 AddressLine = school.AddressLine,
                 City = school.City,
-                Endpoint = school.Endpoint,
                 FacebookPageId = school.FacebookPageId,
                 Info = school.Info,
             };

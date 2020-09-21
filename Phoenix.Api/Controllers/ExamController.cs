@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,13 +13,14 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class ExamController : BaseController
     {
         private readonly ILogger<ExamController> _logger;
         private readonly ExamRepository _examRepository;
 
-        public ExamController(PhoenixContext phoenixContext, ILogger<ExamController> logger)
+        public ExamController(PhoenixContext phoenixContext, ILogger<ExamController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._examRepository = new ExamRepository(phoenixContext);
@@ -49,6 +51,8 @@ namespace Phoenix.Api.Controllers
                             {
                                 id = material.Book.Id,
                                 Name = material.Book.Name,
+                                Publisher = material.Book.Publisher,
+                                Info = material.Book.Info
                             }
                             : null
                     }).ToList()
@@ -114,6 +118,8 @@ namespace Phoenix.Api.Controllers
                             {
                                 id = material.Book.Id,
                                 Name = material.Book.Name,
+                                Publisher = material.Book.Publisher,
+                                Info = material.Book.Info
                             }
                             : null
                     }).ToList()
@@ -180,6 +186,8 @@ namespace Phoenix.Api.Controllers
                             {
                                 id = material.Book.Id,
                                 Name = material.Book.Name,
+                                Publisher = material.Book.Publisher,
+                                Info = material.Book.Info
                             }
                             : null
                     }).ToList()
@@ -228,7 +236,7 @@ namespace Phoenix.Api.Controllers
             return await studentExams.Select(studentExam => new StudentExamApi
             {
                 Grade = studentExam.Grade,
-                Student = studentExam.Student != null ? new UserApi
+                User = studentExam.Student != null ? new UserApi
                 {
                     id = studentExam.Student.AspNetUserId,
                     FirstName = studentExam.Student.FirstName,
@@ -245,8 +253,50 @@ namespace Phoenix.Api.Controllers
             }).ToListAsync();
         }
 
+        [HttpPost("{id}/StudentExam")]
+        public async Task<StudentExamApi> PostStudentExam(int id, [FromBody] StudentExamApi studentExamApi)
+        {
+            this._logger.LogInformation($"Api -> Exam -> {id} -> StudentExam -> Post");
 
+            if (studentExamApi == null)
+                throw new ArgumentNullException(nameof(studentExamApi));
 
+            StudentExam studentExam = new StudentExam
+            {
+                ExamId = id,
+                Grade = studentExamApi.Grade,
+                StudentId = studentExamApi.User.id
+            };
+
+            var exam = await this._examRepository.find(id);
+
+            if (exam.StudentExam.Any(a => a.StudentId == studentExam.StudentId))
+            {
+                var x = exam.StudentExam.Single(a => a.StudentId == studentExam.StudentId);
+                x.Grade = studentExam.Grade;
+            }
+            else
+            {
+                exam.StudentExam.Add(studentExam);
+            }
+
+            exam = this._examRepository.update(exam);
+            studentExam = exam.StudentExam.SingleOrDefault(a => a.StudentId == studentExam.StudentId);
+
+            return new StudentExamApi
+            {
+                Grade = studentExam.Grade,
+                User = new UserApi
+                {
+                    id = studentExam.StudentId,
+                },
+                Exam = new ExamApi
+                {
+                    id = studentExam.ExamId
+                }
+            };
+
+        }
 
 
     }

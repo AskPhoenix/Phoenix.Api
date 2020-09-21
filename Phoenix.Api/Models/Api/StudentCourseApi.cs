@@ -6,14 +6,14 @@ using Phoenix.DataHandle.Main.Relationships;
 
 namespace Phoenix.Api.Models.Api
 {
-    public class StudentExamApi : IStudentExam
+    public class StudentCourseApi : IStudentCourse
     {
         public decimal? Grade { get; set; }
 
         public UserApi User { get; set; }
-        IUser IStudentExam.Student => this.User;
+        IUser IStudentCourse.Student => this.User;
 
-        public ExamApi Exam { get; set; }
-        IExam IStudentExam.Exam => this.Exam;
+        public CourseApi Course { get; set; }
+        ICourse IStudentCourse.Course => this.Course;
     }
 }

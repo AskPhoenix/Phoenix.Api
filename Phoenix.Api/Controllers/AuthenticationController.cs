@@ -14,12 +14,12 @@ namespace Phoenix.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthenticationController : BaseController
+    public class AuthenticationController : Talagozis.AspNetCore.Controllers.BaseController
     {
         private readonly ITokenAuthenticationService _tokenAuthenticationService;
         private readonly ILogger<AuthenticationController> _logger;
 
-        public AuthenticationController(ITokenAuthenticationService tokenAuthenticationService, ILogger<AuthenticationController> logger)
+        public AuthenticationController(ITokenAuthenticationService tokenAuthenticationService, ILogger<AuthenticationController> logger) 
         {
             this._tokenAuthenticationService = tokenAuthenticationService;
             this._logger = logger;
@@ -39,7 +39,7 @@ namespace Phoenix.Api.Controllers
 
             try
             {
-                string token = await this._tokenAuthenticationService.authenticateAsync(tokenRequest);
+                string token = await this._tokenAuthenticationService.authenticateBasicAsync(tokenRequest.username, tokenRequest.password);
 
                 if (string.IsNullOrWhiteSpace(token))
                     return this.Unauthorized(new
@@ -64,7 +64,7 @@ namespace Phoenix.Api.Controllers
         [HttpPost("authenticate/facebookid")]
         public async Task<IActionResult> AuthenticateFacebookId([FromBody] FacebookTokenRequest facebookTokenRequest)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
             this._logger.LogInformation("Api -> Authentication -> Authenticate -> FacebookId");
 
@@ -76,8 +76,8 @@ namespace Phoenix.Api.Controllers
 
             try
             {
-                //this._logger.LogInformation($"FacebookId: {facebookTokenRequest.facebookId} and signature: {facebookTokenRequest.signature}.");
-                string token = await this._tokenAuthenticationService.authenticateAsync(new TokenRequest());
+                this._logger.LogInformation($"FacebookId: {facebookTokenRequest.facebookId} and signature: {facebookTokenRequest.signature}.");
+                string token = await this._tokenAuthenticationService.authenticateFacebookIdAsync(facebookTokenRequest.facebookId, facebookTokenRequest.signature);
 
                 if (string.IsNullOrWhiteSpace(token))
                     return this.Unauthorized(new

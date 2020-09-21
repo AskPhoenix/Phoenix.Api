@@ -18,7 +18,7 @@ namespace Phoenix.Api.Controllers
         private readonly ILogger<BookController> _logger;
         private readonly Repository<Book> _bookRepository;
 
-        public BookController(PhoenixContext phoenixContext, ILogger<BookController> logger)
+        public BookController(PhoenixContext phoenixContext, ILogger<BookController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._bookRepository = new Repository<Book>(phoenixContext);
@@ -35,6 +35,8 @@ namespace Phoenix.Api.Controllers
             {
                 id = book.Id,
                 Name = book.Name,
+                Publisher = book.Publisher,
+                Info = book.Info
             }).ToListAsync();
         }
 
@@ -49,6 +51,8 @@ namespace Phoenix.Api.Controllers
             {
                 id = book.Id,
                 Name = book.Name,
+                Publisher = book.Publisher,
+                Info = book.Info
             };
         }
 

@@ -18,6 +18,7 @@ namespace Phoenix.Api.Models.Api
         public ICollection<MaterialApi> Materials { get; set; }
         IEnumerable<IMaterial> IExam.Materials => this.Materials;
 
-        public IEnumerable<IStudentExam> StudentExams { get; }
+        public ICollection<StudentExamApi> StudentExams { get; set; }
+        IEnumerable<IStudentExam> IExam.StudentExams => this.StudentExams;
     }
 }

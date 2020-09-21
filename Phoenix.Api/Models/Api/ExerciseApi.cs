@@ -19,6 +19,7 @@ namespace Phoenix.Api.Models.Api
         public LectureApi Lecture { get; set; }
         ILecture IExercise.Lecture => this.Lecture;
 
-        public IEnumerable<IStudentExercise> StudentExercises { get; set; }
+        public ICollection<StudentExerciseApi> StudentExercises { get; set; }
+        IEnumerable<IStudentExercise> IExercise.StudentExercises => this.StudentExercises;
     }
 }

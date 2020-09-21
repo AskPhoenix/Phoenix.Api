@@ -12,7 +12,11 @@ namespace Phoenix.Api.Models.Api
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
         public string Info { get; set; }
-        public ICourse Course { get; set; }
-        public IClassroom Classroom { get; set; }
+
+        public CourseApi Course { get; set; }
+        ICourse ISchedule.Course => this.Course;
+
+        public ClassroomApi Classroom { get; set; }
+        IClassroom ISchedule.Classroom => this.Classroom;
     }
 }

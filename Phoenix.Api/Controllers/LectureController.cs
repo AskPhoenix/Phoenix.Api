@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class LectureController : BaseController
     {
@@ -20,14 +22,16 @@ namespace Phoenix.Api.Controllers
         private readonly LectureRepository _lectureRepository;
         private readonly Repository<Exercise> _exerciseRepository;
         private readonly Repository<Exam> _examRepository;
+        private readonly Repository<User> _userRepository;
 
-        public LectureController(PhoenixContext phoenixContext, ILogger<LectureController> logger)
+        public LectureController(PhoenixContext phoenixContext, ILogger<LectureController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._lectureRepository = new LectureRepository(phoenixContext);
             this._lectureRepository.include(a => a.Course, a => a.Classroom);
             this._exerciseRepository = new Repository<Exercise>(phoenixContext);
             this._examRepository = new Repository<Exam>(phoenixContext);
+            this._userRepository = new Repository<User>(phoenixContext);
         }
 
         [HttpGet]
@@ -143,6 +147,8 @@ namespace Phoenix.Api.Controllers
                 {
                     id = exercise.Book.Id,
                     Name = exercise.Book.Name,
+                    Publisher = exercise.Book.Publisher,
+                    Info = exercise.Book.Info
                 },
             }).ToListAsync();
         }
@@ -174,9 +180,37 @@ namespace Phoenix.Api.Controllers
                         {
                             id = material.Book.Id,
                             Name = material.Book.Name,
+                            Publisher = material.Book.Publisher,
+                            Info = material.Book.Info
                         }
                         : null
                 }).ToList()
+            }).ToListAsync();
+        }
+
+        [HttpGet("{id}/Student")]
+        public async Task<IEnumerable<UserApi>> GetStudent(int id)
+        {
+            this._logger.LogInformation($"Api -> Lecture -> Get -> {id} -> Students");
+
+            IQueryable<User> users = this._userRepository.find().Where(a => a.StudentCourse.Any(b => b.Course.Lecture.Any(c => c.Id == id)));
+
+            return await users.Select(user => new UserApi
+            {
+                id = user.AspNetUserId,
+                LastName = user.LastName,
+                FirstName = user.FirstName,
+                FullName = user.FullName,
+                AspNetUser = new AspNetUserApi
+                {
+                    id = user.AspNetUser.Id,
+                },
+                StudentCourses = user.StudentCourse.Select(a => new StudentCourse
+                {
+                    StudentId = a.StudentId,
+                    CourseId = a.CourseId,
+                    Grade = a.Grade
+                })
             }).ToListAsync();
         }
 

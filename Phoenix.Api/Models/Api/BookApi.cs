@@ -10,6 +10,9 @@ namespace Phoenix.Api.Models.Api
     {
         public int id { get; set; }
         public string Name { get; set; }
+        public string Publisher { get; set; }
+        public string Info { get; set; }
+
         public IEnumerable<ICourseBook> CourseBooks { get; }
         public IEnumerable<IExercise> Exercises { get; }
         public IEnumerable<IMaterial> Materials { get; }
