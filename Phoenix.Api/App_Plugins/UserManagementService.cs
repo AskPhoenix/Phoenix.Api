@@ -48,7 +48,11 @@ namespace Phoenix.Api.App_Plugins
 
         public async Task<IAuthenticatedUser> authenticateUserFacebookIdAsync(string facebookId, string signature, CancellationToken cancellationToken)
         {
-            ApplicationUser applicationUser = await this._userManager.FindByFacebookIdAsync(facebookId);
+            var user = this._aspNetUserRepository.find().SingleOrDefault(a => a.FacebookId == facebookId);
+            if (user == null)
+                return null;
+
+            ApplicationUser applicationUser = await this._userManager.FindByIdAsync(user.Id.ToString());
 
             if (applicationUser == null)
                 return null;
