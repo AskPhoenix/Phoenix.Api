@@ -58,8 +58,8 @@ namespace Phoenix.Api.App_Plugins
                 return null;
 
             // TODO: To be refactored
-            if (!applicationUser.PhoneNumberConfirmed)
-                return null;
+            //if (!applicationUser.PhoneNumberConfirmed)
+            //    return null;
 
             if (!(await this._aspNetUserRepository.find(applicationUser.Id)).verifyHashSignature(signature))
                 return null;
@@ -68,8 +68,8 @@ namespace Phoenix.Api.App_Plugins
             {
                 uuid = applicationUser.Id.ToString(),
                 username = applicationUser.UserName,
-                email = applicationUser.EmailConfirmed ? applicationUser.Email : string.Empty,
-                phoneNumber = applicationUser.PhoneNumberConfirmed ? applicationUser.PhoneNumber : string.Empty,
+                email = applicationUser.EmailConfirmed ? (applicationUser.Email ?? string.Empty) : string.Empty,
+                phoneNumber = applicationUser.PhoneNumberConfirmed ? (applicationUser.PhoneNumber ?? string.Empty) : string.Empty,
                 roles = (await this._userManager.GetRolesAsync(applicationUser)).ToArray(),
             };
         }
