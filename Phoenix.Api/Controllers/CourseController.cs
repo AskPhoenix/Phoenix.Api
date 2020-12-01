@@ -36,7 +36,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> Course -> Get");
 
-            IQueryable<Course> courses = this._courseRepository.find();
+            IQueryable<Course> courses = this._courseRepository.Find();
             courses = courses.Where(a => a.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await courses.Select(course => new CourseApi
@@ -63,7 +63,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Course -> Get{id}");
 
-            Course course  = await this._courseRepository.find(id);
+            Course course  = await this._courseRepository.Find(id);
 
             return new CourseApi
             {
@@ -89,7 +89,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Lecture");
 
-            IQueryable<Lecture> lectures = this._lectureRepository.find().Where(a => a.CourseId == id);
+            IQueryable<Lecture> lectures = this._lectureRepository.Find().Where(a => a.CourseId == id);
             lectures = lectures.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await lectures.Select(lecture => new LectureApi
@@ -124,7 +124,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Schedule");
 
-            IQueryable<Schedule> schedules = this._scheduleRepository.find().Where(a => a.CourseId == id);
+            IQueryable<Schedule> schedules = this._scheduleRepository.Find().Where(a => a.CourseId == id);
             schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await schedules.Select(schedule => new ScheduleApi
@@ -148,7 +148,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Course -> Get{id} -> Book");
 
-            IQueryable<Book> books = this._bookRepository.find().Where(a => a.CourseBook.Any(b => b.CourseId == id));
+            IQueryable<Book> books = this._bookRepository.Find().Where(a => a.CourseBook.Any(b => b.CourseId == id));
             books = books.Where(a => a.CourseBook.Any(c => c.Course.TeacherCourse.Any(b => b.TeacherId == this.userId)));
 
             return await books.Select(book => new BookApi

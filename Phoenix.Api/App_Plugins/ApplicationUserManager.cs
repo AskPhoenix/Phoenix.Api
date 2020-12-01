@@ -43,6 +43,9 @@ namespace Phoenix.Api.App_Plugins
 
         public override Task<IdentityResult> CreateAsync(ApplicationUser user)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
             user.CreatedAt = DateTime.Now;
             if (user.User == null)
                 user.User = new User();
@@ -55,9 +58,9 @@ namespace Phoenix.Api.App_Plugins
             return this.Store.FindByPhoneNumberAsync(phoneNumber);
         }
 
-        public Task<ApplicationUser> FindByFacebookIdAsync(string facebookId)
-        {
-            return this.Store.FindByFacebookIdAsync(facebookId);
-        }
+        //public Task<ApplicationUser> FindByFacebookIdAsync(string facebookId)
+        //{
+        //    return this.Store.FindByFacebookIdAsync(facebookId);
+        //}
     }
 }

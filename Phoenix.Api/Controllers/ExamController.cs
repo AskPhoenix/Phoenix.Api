@@ -24,7 +24,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger = logger;
             this._examRepository = new ExamRepository(phoenixContext);
-            this._examRepository.include(a => a.Lecture);
+            this._examRepository.Include(a => a.Lecture);
         }
 
         [HttpGet("{id}")]
@@ -32,7 +32,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Exam -> Get -> {id}");
 
-            Exam exam = await this._examRepository.find(id);
+            Exam exam = await this._examRepository.Find(id);
 
             return new ExamApi
             {
@@ -97,9 +97,9 @@ namespace Phoenix.Api.Controllers
                 LectureId = examApi.Lecture.id
             };
 
-            exam = this._examRepository.create(exam);
+            exam = this._examRepository.Create(exam);
 
-            exam = await this._examRepository.find(exam.Id);
+            exam = await this._examRepository.Find(exam.Id);
 
             return new ExamApi
             {
@@ -165,9 +165,9 @@ namespace Phoenix.Api.Controllers
                 LectureId = examApi.Lecture.id
             };
 
-            exam = this._examRepository.update(exam);
+            exam = this._examRepository.Update(exam);
 
-            exam = await this._examRepository.find(exam.Id);
+            exam = await this._examRepository.Find(exam.Id);
 
             return new ExamApi
             {
@@ -222,7 +222,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Exam -> Delete -> {id}");
 
-            this._examRepository.delete(id);
+            this._examRepository.Delete(id);
         }
 
 
@@ -238,16 +238,16 @@ namespace Phoenix.Api.Controllers
                 Grade = studentExam.Grade,
                 User = studentExam.Student != null ? new UserApi
                 {
-                    id = studentExam.Student.AspNetUserId,
-                    FirstName = studentExam.Student.FirstName,
-                    LastName = studentExam.Student.LastName,
-                    FullName = studentExam.Student.FullName,
+                    id = studentExam.Student.Id,
+                    FirstName = studentExam.Student.User.FirstName,
+                    LastName = studentExam.Student.User.LastName,
+                    FullName = studentExam.Student.User.FullName,
                     AspNetUser = new AspNetUserApi
                     {
-                        id = studentExam.Student.AspNetUser.Id,
-                        UserName = studentExam.Student.AspNetUser.UserName,
-                        Email = studentExam.Student.AspNetUser.Email,
-                        PhoneNumber = studentExam.Student.AspNetUser.PhoneNumber
+                        id = studentExam.Student.Id,
+                        UserName = studentExam.Student.UserName,
+                        Email = studentExam.Student.Email,
+                        PhoneNumber = studentExam.Student.PhoneNumber
                     },
                 } : null, 
             }).ToListAsync();
@@ -265,10 +265,10 @@ namespace Phoenix.Api.Controllers
             {
                 ExamId = id,
                 Grade = studentExamApi.Grade,
-                StudentId = studentExamApi.User.id
+                StudentId = studentExamApi.AspNetUser.id
             };
 
-            var exam = await this._examRepository.find(id);
+            var exam = await this._examRepository.Find(id);
 
             if (exam.StudentExam.Any(a => a.StudentId == studentExam.StudentId))
             {
@@ -280,7 +280,7 @@ namespace Phoenix.Api.Controllers
                 exam.StudentExam.Add(studentExam);
             }
 
-            exam = this._examRepository.update(exam);
+            exam = this._examRepository.Update(exam);
             studentExam = exam.StudentExam.SingleOrDefault(a => a.StudentId == studentExam.StudentId);
 
             return new StudentExamApi

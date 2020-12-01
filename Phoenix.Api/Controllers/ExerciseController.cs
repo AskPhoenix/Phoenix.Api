@@ -24,7 +24,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger = logger;
             this._exerciseRepository = new ExerciseRepository(phoenixContext);
-            this._exerciseRepository.include(a => a.Lecture);
+            this._exerciseRepository.Include(a => a.Lecture);
         }
 
         [HttpGet("{id}")]
@@ -32,7 +32,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Exercise -> Get -> {id}");
 
-            Exercise exercise = await this._exerciseRepository.find(id);
+            Exercise exercise = await this._exerciseRepository.Find(id);
 
             return new ExerciseApi
             {
@@ -83,9 +83,9 @@ namespace Phoenix.Api.Controllers
                 BookId = exerciseApi.Book.id,
             };
 
-            exercise = this._exerciseRepository.create(exercise);
+            exercise = this._exerciseRepository.Create(exercise);
 
-            exercise = await this._exerciseRepository.find(exercise.Id);
+            exercise = await this._exerciseRepository.Find(exercise.Id);
 
             return new ExerciseApi
             {
@@ -145,9 +145,9 @@ namespace Phoenix.Api.Controllers
                 BookId = exerciseApi.Book.id,
             };
 
-            exercise = this._exerciseRepository.update(exercise);
+            exercise = this._exerciseRepository.Update(exercise);
 
-            exercise = await this._exerciseRepository.find(exercise.Id);
+            exercise = await this._exerciseRepository.Find(exercise.Id);
 
             return new ExerciseApi
             {
@@ -194,7 +194,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Exercise -> Delete -> {id}");
 
-            this._exerciseRepository.delete(id);
+            this._exerciseRepository.Delete(id);
         }
 
 
@@ -210,16 +210,16 @@ namespace Phoenix.Api.Controllers
                 Grade = studentExercise.Grade,
                 User = studentExercise.Student != null ? new UserApi
                 {
-                    id = studentExercise.Student.AspNetUserId,
-                    FirstName = studentExercise.Student.FirstName,
-                    LastName = studentExercise.Student.LastName,
-                    FullName = studentExercise.Student.FullName,
+                    id = studentExercise.Student.Id,
+                    FirstName = studentExercise.Student.User.FirstName,
+                    LastName = studentExercise.Student.User.LastName,
+                    FullName = studentExercise.Student.User.FullName,
                     AspNetUser = new AspNetUserApi
                     {
-                        id = studentExercise.Student.AspNetUser.Id,
-                        UserName = studentExercise.Student.AspNetUser.UserName,
-                        Email = studentExercise.Student.AspNetUser.Email,
-                        PhoneNumber = studentExercise.Student.AspNetUser.PhoneNumber
+                        id = studentExercise.Student.Id,
+                        UserName = studentExercise.Student.UserName,
+                        Email = studentExercise.Student.Email,
+                        PhoneNumber = studentExercise.Student.PhoneNumber
                     },
                 } : null,
             }).ToListAsync();
@@ -241,7 +241,7 @@ namespace Phoenix.Api.Controllers
                 StudentId = studentExerciseApi.User.id
             };
 
-            var exercise = await this._exerciseRepository.find(id);
+            var exercise = await this._exerciseRepository.Find(id);
 
             if (exercise.StudentExercise.Any(a => a.StudentId == studentExercise.StudentId))
             {
@@ -253,7 +253,7 @@ namespace Phoenix.Api.Controllers
                 exercise.StudentExercise.Add(studentExercise);
             }
 
-            exercise = this._exerciseRepository.update(exercise);
+            exercise = this._exerciseRepository.Update(exercise);
             studentExercise = exercise.StudentExercise.SingleOrDefault(a => a.StudentId == studentExercise.StudentId);
 
             return new StudentExerciseApi

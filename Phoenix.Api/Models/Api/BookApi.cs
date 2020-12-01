@@ -10,6 +10,7 @@ namespace Phoenix.Api.Models.Api
     {
         public int id { get; set; }
         public string Name { get; set; }
+        public string NormalizedName { get; set; }
         public string Publisher { get; set; }
         public string Info { get; set; }
 

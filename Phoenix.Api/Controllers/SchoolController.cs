@@ -30,7 +30,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> School -> Get");
 
-            IQueryable<School> schools = this._schoolRepository.find();
+            IQueryable<School> schools = this._schoolRepository.Find();
             schools = schools.Where(a => a.Course.Any(b => b.TeacherCourse.Any(c => c.TeacherId == this.userId)));
 
             return await schools.Select(school => new SchoolApi
@@ -50,7 +50,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> School -> Get{id}");
 
-            School school = await this._schoolRepository.find(id);
+            School school = await this._schoolRepository.Find(id);
 
             return new SchoolApi
             {
@@ -78,7 +78,10 @@ namespace Phoenix.Api.Controllers
         [HttpPut("{id}")]
         public Task<SchoolApi> Put(int id, [FromBody] SchoolApi schoolApi)
         {
-            this._logger.LogInformation("Api -> School -> Put -> {id}");
+            this._logger.LogInformation($"Api -> School -> Put -> {id}");
+
+            if (id == default)
+                throw new ArgumentNullException(nameof(id));
 
             if (schoolApi == null)
                 throw new ArgumentNullException(nameof(schoolApi));

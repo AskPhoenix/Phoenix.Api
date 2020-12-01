@@ -22,16 +22,16 @@ namespace Phoenix.Api.Controllers
         private readonly LectureRepository _lectureRepository;
         private readonly Repository<Exercise> _exerciseRepository;
         private readonly Repository<Exam> _examRepository;
-        private readonly Repository<User> _userRepository;
+        private readonly Repository<AspNetUsers> _AspNetUserRepository;
 
         public LectureController(PhoenixContext phoenixContext, ILogger<LectureController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._lectureRepository = new LectureRepository(phoenixContext);
-            this._lectureRepository.include(a => a.Course, a => a.Classroom);
+            this._lectureRepository.Include(a => a.Course, a => a.Classroom);
             this._exerciseRepository = new Repository<Exercise>(phoenixContext);
             this._examRepository = new Repository<Exam>(phoenixContext);
-            this._userRepository = new Repository<User>(phoenixContext);
+            this._AspNetUserRepository = new Repository<AspNetUsers>(phoenixContext);
         }
 
         [HttpGet]
@@ -39,7 +39,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> Lecture -> Get");
 
-            IQueryable<Lecture> lectures = this._lectureRepository.find();
+            IQueryable<Lecture> lectures = this._lectureRepository.Find();
 
             return await lectures.Select(lecture => new LectureApi
             {
@@ -83,7 +83,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Lecture -> Get{id}");
 
-            Lecture lecture = await this._lectureRepository.find(id);
+            Lecture lecture = await this._lectureRepository.Find(id);
 
             return new LectureApi
             {
@@ -132,7 +132,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Lecture -> Get -> {id} -> Exercises");
 
-            IQueryable<Exercise> exercises = this._exerciseRepository.find().Where(a => a.LectureId == id);
+            IQueryable<Exercise> exercises = this._exerciseRepository.Find().Where(a => a.LectureId == id);
 
             return await exercises.Select(exercise => new ExerciseApi
             {
@@ -158,7 +158,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Lecture -> Get -> {id} -> Exams");
 
-            IQueryable<Exam> exams = this._examRepository.find().Where(a => a.LectureId == id);
+            IQueryable<Exam> exams = this._examRepository.Find().Where(a => a.LectureId == id);
 
             return await exams.Select(exam => new ExamApi
             {
@@ -193,17 +193,17 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Lecture -> Get -> {id} -> Students");
 
-            IQueryable<User> users = this._userRepository.find().Where(a => a.StudentCourse.Any(b => b.Course.Lecture.Any(c => c.Id == id)));
+            IQueryable<AspNetUsers> users = this._AspNetUserRepository.Find().Where(a => a.StudentCourse.Any(b => b.Course.Lecture.Any(c => c.Id == id)));
 
             return await users.Select(user => new UserApi
             {
-                id = user.AspNetUserId,
-                LastName = user.LastName,
-                FirstName = user.FirstName,
-                FullName = user.FullName,
+                id = user.Id,
+                LastName = user.User.LastName,
+                FirstName = user.User.FirstName,
+                FullName = user.User.FullName,
                 AspNetUser = new AspNetUserApi
                 {
-                    id = user.AspNetUser.Id,
+                    id = user.Id,
                 },
                 StudentCourses = user.StudentCourse.Select(a => new StudentCourse
                 {
@@ -218,6 +218,9 @@ namespace Phoenix.Api.Controllers
         public async Task<LectureApi> Post([FromBody] LectureApi lectureApi)
         {
             this._logger.LogInformation("Api -> Lecture -> Post");
+
+            if (lectureApi == null)
+                throw new ArgumentNullException(nameof(lectureApi));
 
             Lecture lecture = new Lecture
             {
@@ -238,9 +241,9 @@ namespace Phoenix.Api.Controllers
                 ScheduleId = null
             };
 
-            lecture = this._lectureRepository.create(lecture);
+            lecture = await this._lectureRepository.Create(lecture);
 
-            lecture = await this._lectureRepository.find(lecture.Id);
+            lecture = await this._lectureRepository.Find(lecture.Id);
 
             return new LectureApi
             {

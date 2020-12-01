@@ -18,35 +18,34 @@ namespace Phoenix.Api.Controllers
     public class UserController : BaseController
     {
         private readonly ILogger<UserController> _logger;
-        private readonly Repository<User> _userRepository;
+        private readonly Repository<AspNetUsers> _aspNetUserRepository;
 
         public UserController(PhoenixContext phoenixContext, ILogger<UserController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
-            this._userRepository = new Repository<User>(phoenixContext);
+            this._aspNetUserRepository = new Repository<AspNetUsers>(phoenixContext);
         }
 
         [HttpGet]
         public async Task<IEnumerable<IUser>> Get()
         {
-            this._logger.LogInformation("Api -> User -> Get");
+            this._logger.LogInformation("Api -> AspNetUser -> Get");
 
-            IQueryable<User> users = this._userRepository.find();
+            IQueryable<AspNetUsers> aspNetUsers = this._aspNetUserRepository.Find();
 
-            return await users.Select(user => new UserApi
+            return await aspNetUsers.Select(aspNetUser => new UserApi
             {
-                id = user.AspNetUserId,
-                LastName = user.LastName,
-                FirstName = user.FirstName,
-                FullName = user.FullName,
+                id = aspNetUser.Id,
+                LastName = aspNetUser.User.LastName,
+                FirstName = aspNetUser.User.FirstName,
+                FullName = aspNetUser.User.FullName,
                 AspNetUser = new AspNetUserApi
                 {
-                    id = user.AspNetUser.Id,
-                    UserName = user.AspNetUser.UserName,
-                    Email = user.AspNetUser.Email,
-                    PhoneNumber = user.AspNetUser.PhoneNumber,
-                    FacebookId = user.AspNetUser.FacebookId,
-                    RegisteredAt = user.AspNetUser.RegisteredAt
+                    id = aspNetUser.Id,
+                    UserName = aspNetUser.UserName,
+                    Email = aspNetUser.Email,
+                    PhoneNumber = aspNetUser.PhoneNumber,
+                    RegisteredAt = aspNetUser.RegisteredAt
                 }
             }).ToListAsync();
         }
@@ -54,24 +53,23 @@ namespace Phoenix.Api.Controllers
         [HttpGet("{id}")]
         public async Task<IUser> Get(int id)
         {
-            this._logger.LogInformation($"Api -> User -> Get{id}");
+            this._logger.LogInformation($"Api -> AspNetUser -> Get{id}");
 
-            User user = await this._userRepository.find(id);
+            AspNetUsers aspNetUser = await this._aspNetUserRepository.Find(id);
 
             return new UserApi
             {
-                id = user.AspNetUserId,
-                LastName = user.LastName,
-                FirstName = user.FirstName,
-                FullName = user.FullName,
+                id = aspNetUser.Id,
+                LastName = aspNetUser.User.LastName,
+                FirstName = aspNetUser.User.FirstName,
+                FullName = aspNetUser.User.FullName,
                 AspNetUser = new AspNetUserApi
                 {
-                    id = user.AspNetUser.Id,
-                    UserName = user.AspNetUser.UserName,
-                    Email = user.AspNetUser.Email,
-                    PhoneNumber = user.AspNetUser.PhoneNumber,
-                    FacebookId = user.AspNetUser.FacebookId,
-                    RegisteredAt = user.AspNetUser.RegisteredAt
+                    id = aspNetUser.Id,
+                    UserName = aspNetUser.UserName,
+                    Email = aspNetUser.Email,
+                    PhoneNumber = aspNetUser.PhoneNumber,
+                    RegisteredAt = aspNetUser.RegisteredAt
                 }
             };
         }

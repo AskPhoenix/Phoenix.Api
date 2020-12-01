@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,13 +18,13 @@ namespace Phoenix.Api.Controllers
     public class AccountController : BaseController
     {
         private readonly ILogger<AccountController> _logger;
-        private readonly UserRepository _userRepository;
+        private readonly AspNetUserRepository _aspNetUserRepository;
 
         public AccountController(PhoenixContext phoenixContext, ILogger<AccountController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
-            this._userRepository = new UserRepository(phoenixContext);
-            this._userRepository.include(a => a.Include(b => b.AspNetUser));
+            this._aspNetUserRepository = new AspNetUserRepository(phoenixContext);
+            this._aspNetUserRepository.Include(a => a.Include(b => b.User));
         }
 
         [HttpGet("me")]
@@ -34,9 +33,9 @@ namespace Phoenix.Api.Controllers
             this._logger.LogInformation($"Api -> Account -> Me");
 
             if(!this.userId.HasValue)
-                throw new Exception("User is not authorized.");
+                throw new Exception("AspNetUser is not authorized.");
 
-            User user = await this._userRepository.find().SingleAsync(a => a.AspNetUserId == this.userId.Value);
+            User user = (await this._aspNetUserRepository.Find().SingleAsync(a => a.Id == this.userId.Value)).User;
 
             return new UserApi
             {
@@ -51,15 +50,15 @@ namespace Phoenix.Api.Controllers
                     Email = user.AspNetUser.Email,
                     PhoneNumber = user.AspNetUser.PhoneNumber,
                     RegisteredAt = user.AspNetUser.RegisteredAt,
-                },
-                TeacherCourses = user.TeacherCourse.Select(teacherCourse => new TeacherCourseApi
-                {
-                    Course = new CourseApi
+                    TeacherCourses = user.AspNetUser.TeacherCourse.Select(teacherCourse => new TeacherCourseApi
                     {
-                        id = teacherCourse.Course.Id,
-                        Name = teacherCourse.Course.Name
-                    }
-                }).ToList()
+                        Course = new CourseApi
+                        {
+                            id = teacherCourse.Course.Id,
+                            Name = teacherCourse.Course.Name
+                        }
+                    }).ToList()
+                }
             };
         }
 

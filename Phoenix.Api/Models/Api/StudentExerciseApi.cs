@@ -11,7 +11,8 @@ namespace Phoenix.Api.Models.Api
         public decimal? Grade { get; set; }
 
         public UserApi User { get; set; }
-        IUser IStudentExercise.Student => this.User;
+        public AspNetUserApi AspNetUser { get; set; }
+        IAspNetUsers IStudentExercise.Student => this.AspNetUser;
 
         public ExerciseApi Exercise { get; set; }
         IExercise IStudentExercise.Exercise => this.Exercise;

@@ -9,6 +9,7 @@ namespace Phoenix.Api.Models.Api
     {
         public int id { get; set; }
         public string Name { get; set; }
+        public string NormalizedName { get; set; }
         public string Info { get; set; }
 
         public SchoolApi School { get; set; }
@@ -16,5 +17,6 @@ namespace Phoenix.Api.Models.Api
         
         public IEnumerable<IExam> Exams { get; }
         public IEnumerable<ILecture> Lectures { get; }
+        public IEnumerable<ISchedule> Schedules { get; }
     }
 }

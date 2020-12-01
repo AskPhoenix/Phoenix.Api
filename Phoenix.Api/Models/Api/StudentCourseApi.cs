@@ -10,8 +10,8 @@ namespace Phoenix.Api.Models.Api
     {
         public decimal? Grade { get; set; }
 
-        public UserApi User { get; set; }
-        IUser IStudentCourse.Student => this.User;
+        public AspNetUserApi User { get; set; }
+        IAspNetUsers IStudentCourse.Student => this.User;
 
         public CourseApi Course { get; set; }
         ICourse IStudentCourse.Course => this.Course;

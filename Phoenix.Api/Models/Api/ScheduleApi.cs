@@ -18,5 +18,7 @@ namespace Phoenix.Api.Models.Api
 
         public ClassroomApi Classroom { get; set; }
         IClassroom ISchedule.Classroom => this.Classroom;
+
+        public IEnumerable<ILecture> Lectures { get; }
     }
 }

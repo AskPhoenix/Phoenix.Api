@@ -30,7 +30,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Material -> Get{id}");
 
-            Material material = await this._materialRepository.find(id);
+            Material material = await this._materialRepository.Find(id);
 
             return new MaterialApi
             {
@@ -59,6 +59,9 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> Material -> Post");
 
+            if (materialApi == null)
+                throw new ArgumentNullException(nameof(materialApi));
+
             Material material = new Material
             {
                 Id = materialApi.id,
@@ -69,9 +72,9 @@ namespace Phoenix.Api.Controllers
                 ExamId = materialApi.Exam.id
             };
 
-            material = this._materialRepository.create(material);
+            material = this._materialRepository.Create(material);
 
-            material = await this._materialRepository.find(material.Id);
+            material = await this._materialRepository.Find(material.Id);
 
             return new MaterialApi
             {
@@ -98,7 +101,13 @@ namespace Phoenix.Api.Controllers
         [HttpPut("{id}")]
         public async Task<MaterialApi> Put(int id, [FromBody] MaterialApi materialApi)
         {
-            this._logger.LogInformation("Api -> Material -> Put");
+            this._logger.LogInformation($"Api -> Material -> Put -> {id}");
+
+            if (id == default)
+                throw new ArgumentNullException(nameof(id));
+
+            if (materialApi == null)
+                throw new ArgumentNullException(nameof(materialApi));
 
             Material material = new Material
             {
@@ -110,9 +119,9 @@ namespace Phoenix.Api.Controllers
                 ExamId = materialApi.Exam.id
             };
 
-            material = this._materialRepository.update(material);
+            material = this._materialRepository.Update(material);
 
-            material = await this._materialRepository.find(material.Id);
+            material = await this._materialRepository.Find(material.Id);
 
             return new MaterialApi
             {
@@ -141,7 +150,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Material -> Get -> {id}");
 
-            this._materialRepository.delete(id);
+            this._materialRepository.Delete(id);
         }
 
     }

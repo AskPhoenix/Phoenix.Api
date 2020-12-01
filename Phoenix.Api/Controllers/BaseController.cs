@@ -13,19 +13,19 @@ namespace Phoenix.Api.Controllers
         protected int? userId { get; private set; }
 
         private readonly ILogger<BaseController> _logger;
-        private readonly Repository<AspNetUsers> _aspNetUserRepository;
+        private readonly Repository<AspNetUsers> _aspNetAspNetUserRepository;
 
         protected BaseController(PhoenixContext phoenixContext, ILogger<BaseController> logger)
         {
             this._logger = logger;
-            this._aspNetUserRepository = new Repository<AspNetUsers>(phoenixContext);
+            this._aspNetAspNetUserRepository = new Repository<AspNetUsers>(phoenixContext);
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             base.OnActionExecuting(context);
 
-            this.userId = this._aspNetUserRepository.find().SingleOrDefault(a => a.UserName == this.User.Identity.Name)?.Id;
+            this.userId = this._aspNetAspNetUserRepository.Find().SingleOrDefault(a => a.UserName == this.User.Identity.Name)?.Id;
 
             this._logger.LogTrace(this.userId.HasValue ? $"The userId is set to {this.userId.Value}" : "No userId is set");
         }

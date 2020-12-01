@@ -15,13 +15,27 @@ namespace Phoenix.Api.Models.Api
         public bool EmailConfirmed { get; set; }
         public string PhoneNumber { get; set; }
         public bool PhoneNumberConfirmed { get; set; }
-        public string FacebookId { get; set; }
         public DateTimeOffset RegisteredAt { get; set; }
         public ApplicationType CreatedApplicationType { get; set; }
 
         public UserApi User { get; set; }
         IUser IAspNetUsers.User => this.User;
 
+        public ICollection<TeacherCourseApi> TeacherCourses { get; set; }
+        IEnumerable<ITeacherCourse> IAspNetUsers.TeacherCourses => this.TeacherCourses;
+
         public IEnumerable<IAspNetUserRoles> Roles { get; set; }
+
+        public IEnumerable<IAspNetUserLogins> AspNetUserLogins { get; set; }
+
+        public IEnumerable<IAttendance> Attendances { get; set; }
+
+        public IEnumerable<IStudentCourse> StudentCourses { get; set; }
+
+        public IEnumerable<IStudentExam> StudentExams { get; set; }
+
+        public IEnumerable<IStudentExercise> StudentExercises { get; set; }
+
+        public IEnumerable<IUserSchool> UserSchools { get; set; }
     }
 }

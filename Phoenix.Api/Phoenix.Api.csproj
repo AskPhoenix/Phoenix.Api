@@ -8,18 +8,34 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.20.11.27</Version>
+    <Version>0.20.12.1</Version>
     <Authors>AskPhoenix</Authors>
-    <UserSecretsId>2764d619-0916-4373-9f80-e0cc75456ce3</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.10" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Phoenix.DataHandle" Version="1.2.4" />
-    <PackageReference Include="Talagozis.AspNetCore" Version="1.20.9.211" />
-    <PackageReference Include="Talagozis.Logging" Version="1.20.7.12" />
+    <PackageReference Include="Phoenix.DataHandle" Version="1.6.7" />
+    <PackageReference Include="Talagozis.AspNetCore" Version="1.20.11.171" />
+    <PackageReference Include="Talagozis.Logging" Version="1.20.11.171" />
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.VersionCheckAnalyzer" Version="3.3.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

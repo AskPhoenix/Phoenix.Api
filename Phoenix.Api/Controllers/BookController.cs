@@ -29,7 +29,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> Book -> Get");
 
-            IQueryable<Book> books = this._bookRepository.find();
+            IQueryable<Book> books = this._bookRepository.Find();
 
             return await books.Select(book => new BookApi
             {
@@ -45,7 +45,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Book -> Get{id}");
 
-            Book book = await this._bookRepository.find(id);
+            Book book = await this._bookRepository.Find(id);
 
             return new BookApi
             {

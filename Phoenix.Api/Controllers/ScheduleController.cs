@@ -31,7 +31,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation("Api -> Schedule -> Get");
 
-            IQueryable<Schedule> schedules = this._scheduleRepository.find();
+            IQueryable<Schedule> schedules = this._scheduleRepository.Find();
             schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
 
             return await schedules.Select(schedule => new ScheduleApi
@@ -65,7 +65,7 @@ namespace Phoenix.Api.Controllers
         {
             this._logger.LogInformation($"Api -> Schedule -> Get{id}");
 
-            Schedule schedule = await this._scheduleRepository.find(id);
+            Schedule schedule = await this._scheduleRepository.Find(id);
 
             return new ScheduleApi
             {
