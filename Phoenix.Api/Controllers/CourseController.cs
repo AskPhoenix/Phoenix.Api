@@ -87,7 +87,7 @@ namespace Phoenix.Api.Controllers
         [HttpGet("{id}/Lecture")]
         public async Task<IEnumerable<LectureApi>> GetLectures(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get{id} -> Lecture");
+            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Lecture");
 
             IQueryable<Lecture> lectures = this._lectureRepository.Find().Where(a => a.CourseId == id);
             lectures = lectures.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
@@ -122,7 +122,7 @@ namespace Phoenix.Api.Controllers
         [HttpGet("{id}/Schedule")]
         public async Task<IEnumerable<ScheduleApi>> GetSchedules(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get{id} -> Schedule");
+            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Schedule");
 
             IQueryable<Schedule> schedules = this._scheduleRepository.Find().Where(a => a.CourseId == id);
             schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
@@ -146,7 +146,7 @@ namespace Phoenix.Api.Controllers
         [HttpGet("{id}/Book")]
         public async Task<IEnumerable<BookApi>> GetBooks(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get{id} -> Book");
+            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Book");
 
             IQueryable<Book> books = this._bookRepository.Find().Where(a => a.CourseBook.Any(b => b.CourseId == id));
             books = books.Where(a => a.CourseBook.Any(c => c.Course.TeacherCourse.Any(b => b.TeacherId == this.userId)));
