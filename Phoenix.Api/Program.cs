@@ -37,6 +37,10 @@ namespace Phoenix.Api
                         a.folderPath = Path.Combine(Directory.GetCurrentDirectory(), "../logs/api/");
                         a.Add(new FileLoggerConfiguration
                         {
+                            logLevel = LogLevel.Debug
+                        });
+                        a.Add(new FileLoggerConfiguration
+                        {
                             logLevel = LogLevel.Warning
                         });
                         a.Add(new FileLoggerConfiguration
