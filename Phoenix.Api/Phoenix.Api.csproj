@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.10" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Phoenix.DataHandle" Version="1.6.11" />
+    <PackageReference Include="Phoenix.DataHandle" Version="1.6.12" />
     <PackageReference Include="Talagozis.AspNetCore" Version="1.20.11.171" />
     <PackageReference Include="Talagozis.Logging" Version="1.20.11.171" />
   </ItemGroup>
