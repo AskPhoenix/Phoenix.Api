@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Phoenix.Api.App_Plugins;
 using Phoenix.DataHandle.Identity;
@@ -83,6 +85,28 @@ namespace Phoenix.Api
             app.UseRouting();
 
             app.UseAuthentication();
+            app.Use(async (context, next) =>
+            {
+                if (context == null)
+                    throw new ArgumentNullException(nameof(context));
+
+                ILogger logger = context.RequestServices.GetService(typeof(ILogger<Startup>)) as ILogger;
+
+                if (logger == null)
+                    return;
+
+                ClaimsPrincipal claimsPrincipal = context?.User;
+                if (claimsPrincipal == null)
+                {
+                    logger.LogTrace("No authorized user is set");
+                    return;
+                }
+
+                logger.LogTrace($"{nameof(ClaimTypes.NameIdentifier)}: {claimsPrincipal.getNameIdentifier()}");
+                logger.LogTrace($"{nameof(ClaimTypes.Role)}s: {string.Join(", ", claimsPrincipal.getRoles())}");
+
+                await next();
+            });
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
