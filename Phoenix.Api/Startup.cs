@@ -20,6 +20,7 @@ namespace Phoenix.Api
 {
     public class Startup
     {
+        public IConfiguration Configuration { get; }
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
 
@@ -62,6 +63,7 @@ namespace Phoenix.Api
                     //    NamingStrategy = new Newtonsoft.Json.Serialization.DefaultNamingStrategy()
                     //};
                 });
+            services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
