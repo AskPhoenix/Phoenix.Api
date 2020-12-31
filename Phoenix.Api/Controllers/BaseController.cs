@@ -25,6 +25,7 @@ namespace Phoenix.Api.Controllers
         {
             base.OnActionExecuting(context);
 
+            this._logger.LogTrace($"The User Identity Name is: {this.User.Identity.Name}");
             this.userId = this._aspNetAspNetUserRepository.Find().SingleOrDefault(a => a.UserName == this.User.Identity.Name)?.Id;
 
             this._logger.LogTrace(this.userId.HasValue ? $"The userId is set to {this.userId.Value}" : "No userId is set");
