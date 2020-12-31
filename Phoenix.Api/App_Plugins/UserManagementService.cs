@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 using Talagozis.AspNetCore.Services.TokenAuthentication;
@@ -30,24 +29,36 @@ namespace Phoenix.Api.App_Plugins
 
         public async Task<IAuthenticatedUser> authenticateUserBasicAsync(string username, string password, CancellationToken cancellationToken)
         {
-            ApplicationUser applicationUser = await this._userManager.FindByNameAsync(username);
+            ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(username);
 
             if (applicationUser == null)
+            {
+                this._logger.LogDebug($"No {nameof(applicationUser)} has found");
+                this._logger.LogDebug($"{nameof(username)}: {username}");
                 return null;
+            }
 
             // TODO: To be refactored
             if (!applicationUser.PhoneNumberConfirmed)
+            {
+                this._logger.LogDebug($"The phone number {applicationUser.PhoneNumber} is not confirmed");
+                this._logger.LogDebug($"{nameof(username)}: {username}");
                 return null;
+            }
 
             if (!await this._userManager.CheckPasswordAsync(applicationUser, password))
+            {
+                this._logger.LogDebug($"The password is not correct");
+                this._logger.LogDebug($"{nameof(username)}: {username}");
                 return null;
+            }
 
             return new AuthenticatedUser
             {
                 uuid = applicationUser.Id.ToString(CultureInfo.InvariantCulture),
                 username = applicationUser.UserName,
-                email = applicationUser.EmailConfirmed ? applicationUser.Email : string.Empty,
-                phoneNumber = applicationUser.PhoneNumberConfirmed ? applicationUser.PhoneNumber : string.Empty,
+                email = applicationUser.EmailConfirmed ? (applicationUser.Email ?? string.Empty) : string.Empty,
+                phoneNumber = applicationUser.PhoneNumberConfirmed ? (applicationUser.PhoneNumber ?? string.Empty) : string.Empty,
                 roles = (await this._userManager.GetRolesAsync(applicationUser)).ToArray(),
             };
         }

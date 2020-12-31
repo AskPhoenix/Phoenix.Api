@@ -29,6 +29,8 @@ namespace Phoenix.Api.Models.Api
         public IEnumerable<IAspNetUserLogins> AspNetUserLogins { get; set; }
 
         public IEnumerable<IAttendance> Attendances { get; set; }
+        public IEnumerable<IParenthood> Children { get; }
+        public IEnumerable<IParenthood> Parents { get; }
 
         public IEnumerable<IStudentCourse> StudentCourses { get; set; }
 

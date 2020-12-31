@@ -13,6 +13,7 @@ namespace Phoenix.Api.Models.Api
         public string LastName { get; set; }
         public string FullName { get; set; }
         public bool TermsAccepted { get; set; }
+        public bool IsSelfDetermined { get; set; }
 
         public AspNetUserApi AspNetUser { get; set; }
         IAspNetUsers IUser.AspNetUser => this.AspNetUser;

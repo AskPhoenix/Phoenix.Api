@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.20.12.4</Version>
+    <Version>0.20.12.31</Version>
     <Authors>AskPhoenix</Authors>
     <UserSecretsId>953183c5-7280-4ba2-8343-b1393b72e5a8</UserSecretsId>
     <ApplicationInsightsResourceId>/subscriptions/158d7265-c8df-4fbd-96df-1d003a650372/resourceGroups/PhoenixRsrcG/providers/microsoft.insights/components/PhoenixApi_Insights</ApplicationInsightsResourceId>
@@ -19,13 +19,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.15.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.10" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Phoenix.DataHandle" Version="1.6.12" />
+    <PackageReference Include="Phoenix.DataHandle" Version="1.7.5" />
     <PackageReference Include="Talagozis.AspNetCore" Version="1.20.11.171" />
-    <PackageReference Include="Talagozis.Logging" Version="1.20.11.171" />
+    <PackageReference Include="Talagozis.Logging" Version="1.20.12.171" />
   </ItemGroup>
 
 
