@@ -69,7 +69,7 @@ namespace Phoenix.Api.Controllers
             };
         }
 
-        [HttpGet("change-password")]
+        [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] AccountChangePassword accountChangePassword)
         {
             this._logger.LogInformation("Api -> Account -> ChangePassword");

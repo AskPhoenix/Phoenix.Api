@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.20.12.31</Version>
+    <Version>0.21.01.01</Version>
     <Authors>AskPhoenix</Authors>
     <ApplicationInsightsResourceId>/subscriptions/158d7265-c8df-4fbd-96df-1d003a650372/resourceGroups/PhoenixRsrcG/providers/microsoft.insights/components/PhoenixApi_Insights</ApplicationInsightsResourceId>
     <UserSecretsId>b38e1fc5-cddd-4004-98cb-a166a9039a33</UserSecretsId>

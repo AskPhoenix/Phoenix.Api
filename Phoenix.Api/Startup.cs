@@ -37,6 +37,7 @@ namespace Phoenix.Api
             
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
+                options.User.AllowedUserNameCharacters = null;
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireNonAlphanumeric = false;
