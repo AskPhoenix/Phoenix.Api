@@ -43,7 +43,12 @@ namespace Phoenix.Api
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequiredLength = 6;
-            }).AddUserStore<ApplicationStore>().AddUserManager<ApplicationUserManager>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+            })
+            .AddRoles<ApplicationRole>()
+            .AddUserStore<ApplicationStore>()
+            .AddUserManager<ApplicationUserManager>()
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
             //services.TryAddScoped<ApplicationUserManager>();
 
