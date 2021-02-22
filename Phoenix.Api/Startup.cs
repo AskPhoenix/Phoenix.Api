@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Phoenix.Api.App_Plugins;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
+using Phoenix.DataHandle.Sms;
 using Talagozis.AspNetCore.Services.TokenAuthentication;
 
 namespace Phoenix.Api
@@ -55,6 +56,8 @@ namespace Phoenix.Api
             services.AddTokenAuthentication<UserManagementService>(this._configuration);
 
             services.AddCors();
+
+            services.AddScoped<ISmsService>(a => new SmsService(this._configuration["NexmoSMS:ApiKey"], this._configuration["NexmoSMS:ApiSecret"]));
 
             services.AddHttpsRedirection(options => options.HttpsPort = 443);
             

@@ -15,6 +15,7 @@ using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
+using Phoenix.DataHandle.Sms;
 
 namespace Phoenix.Api.Controllers
 {
@@ -25,11 +26,13 @@ namespace Phoenix.Api.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly AspNetUserRepository _aspNetUserRepository;
         private readonly ApplicationUserManager _userManager;
+        private readonly ISmsService _smsService;
 
-        public AccountController(ApplicationUserManager userManager, PhoenixContext phoenixContext, ILogger<AccountController> logger) : base(phoenixContext, logger)
+        public AccountController(ApplicationUserManager userManager, PhoenixContext phoenixContext, ISmsService smsService, ILogger<AccountController> logger) : base(phoenixContext, logger)
         {
             this._logger = logger;
             this._aspNetUserRepository = new AspNetUserRepository(phoenixContext);
+            this._smsService = smsService;
             this._userManager = userManager;
             this._aspNetUserRepository.Include(a => a.Include(b => b.User));
         }
@@ -96,6 +99,76 @@ namespace Phoenix.Api.Controllers
 
             return this.Ok();
         }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] AccountResetPassword accountResetPassword)
+        {
+            this._logger.LogInformation("Api -> Account -> ResetPassword");
+
+            if (accountResetPassword == null)
+                throw new ArgumentNullException(nameof(accountResetPassword));
+
+            if (accountResetPassword.id == default(uint) || string.IsNullOrWhiteSpace(accountResetPassword.token) || string.IsNullOrWhiteSpace(accountResetPassword.newPassword))
+                throw new InvalidOperationException("There is an empty parameter.");
+
+
+            AspNetUsers userT = this._aspNetUserRepository.Find().FirstOrDefault(a => a.Id == accountResetPassword.id);
+            if (userT == null)
+                throw new InvalidOperationException($"Could not find user by bid: {accountResetPassword.id}.");
+
+            ApplicationUser applicationUser = await this._userManager.FindByIdAsync(userT.Id.ToString());
+            if (applicationUser == null)
+                throw new InvalidOperationException($"Could not find user by id.");
+
+            IdentityResult result = await this._userManager.ResetPasswordAsync(applicationUser, accountResetPassword.token, accountResetPassword.newPassword);
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"Could not generate reset password, error: {string.Join(", ", result.Errors)}.");
+
+            return this.Ok(new 
+            {
+                id = applicationUser.Id,
+                userName = applicationUser.UserName,
+                phoneNumber = applicationUser.PhoneNumber
+            });
+        }
+
+        [HttpPost("sendPhoneNumberConfirmation")]
+        public async Task<IActionResult> SendPhoneNumberConfirmation([FromBody] AccountSendPhoneNumberConfirmationRpc accountSendPhoneNumberConfirmationRpc)
+        {
+            this._logger.LogInformation("Api -> Account -> SendPhoneNumberConfirmation");
+
+            if (accountSendPhoneNumberConfirmationRpc == null)
+                throw new ArgumentNullException(nameof(accountSendPhoneNumberConfirmationRpc));
+
+            if (string.IsNullOrWhiteSpace(accountSendPhoneNumberConfirmationRpc.phoneNumber))
+                throw new InvalidOperationException($"There is an empty parameter.");
+
+            try
+            {
+                ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber);
+                if (applicationUser == null)
+                    return this.BadRequest(new { message = $"Could not find user by phone number." });
+
+                Random rnd = new Random();
+                int pinCode = rnd.Next(1, 10000);
+
+                AspNetUsers aspNetUser = await this._aspNetUserRepository.Find(applicationUser.Id);
+                aspNetUser.PhoneNumberVerificationCode = pinCode.ToString("0000");
+                aspNetUser.PhoneNumberVerificationCode_at = DateTime.Now;
+                aspNetUser = this._aspNetUserRepository.Update(aspNetUser);
+
+                await this._smsService.SendAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber, $"Χρησιμοποιήστε τον κωδικό επαλήθευσης {pinCode:0000} για τον έλεγχο ταυτότητας σας.");
+
+                return this.Ok();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, ex.Message);
+                throw;
+            }
+        }
+
+
 
 
 
