@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Phoenix.Api.Models
 {
-    public class AccountSendPhoneNumberConfirmationRpc
+    public class AccountSendPhoneNumberConfirmation
     {
         [Required]
         [JsonProperty("phoneNumber")]

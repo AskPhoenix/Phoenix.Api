@@ -23,6 +23,8 @@ namespace Phoenix.Api.Controllers
     [Route("api/[controller]")]
     public class AccountController : BaseController
     {
+        private readonly static TimeSpan pinCodeExpiration = new TimeSpan(-1, 0, 0);
+
         private readonly ILogger<AccountController> _logger;
         private readonly AspNetUserRepository _aspNetUserRepository;
         private readonly ApplicationUserManager _userManager;
@@ -133,7 +135,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpPost("sendPhoneNumberConfirmation")]
-        public async Task<IActionResult> SendPhoneNumberConfirmation([FromBody] AccountSendPhoneNumberConfirmationRpc accountSendPhoneNumberConfirmationRpc)
+        public async Task<IActionResult> SendPhoneNumberConfirmation([FromBody] AccountSendPhoneNumberConfirmation accountSendPhoneNumberConfirmationRpc)
         {
             this._logger.LogInformation("Api -> Account -> SendPhoneNumberConfirmation");
 
@@ -160,6 +162,57 @@ namespace Phoenix.Api.Controllers
                 await this._smsService.SendAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber, $"Χρησιμοποιήστε τον κωδικό επαλήθευσης {pinCode:0000} για τον έλεγχο ταυτότητας σας.");
 
                 return this.Ok();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, ex.Message);
+                throw;
+            }
+        }
+
+        [HttpPost("verifyPhoneNumberConfirmation")]
+        public async Task<IActionResult> VerifyPhoneNumberConfirmation([FromBody] AccountVerifyPhoneNumberConfirmation accountVerifyPhoneNumberConfirmation)
+        {
+            this._logger.LogInformation("Api -> Account -> VerifyPhoneNumberConfirmation");
+
+            if (accountVerifyPhoneNumberConfirmation == null)
+                throw new ArgumentNullException(nameof(accountVerifyPhoneNumberConfirmation));
+
+            if (string.IsNullOrEmpty(accountVerifyPhoneNumberConfirmation.phoneNumber) || string.IsNullOrEmpty(accountVerifyPhoneNumberConfirmation.pinCode))
+                throw new InvalidOperationException("There is an empty parameter.");
+
+            try
+            {
+                ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(accountVerifyPhoneNumberConfirmation.phoneNumber);
+                if (applicationUser == null)
+                    throw new InvalidOperationException($"Could not find user by phone number: {accountVerifyPhoneNumberConfirmation.phoneNumber}.");
+
+                AspNetUsers aspNetUser = await this._aspNetUserRepository.Find(applicationUser.Id);
+
+                if (aspNetUser.PhoneNumberVerificationCode.ToUpperInvariant() != accountVerifyPhoneNumberConfirmation.pinCode.ToUpperInvariant())
+                    throw new InvalidOperationException($"Pin code is incorrect.");
+
+                if (aspNetUser.PhoneNumberVerificationCode_at < DateTime.Now.Add(pinCodeExpiration))
+                    throw new InvalidOperationException($"Pin code is expired.");
+
+                aspNetUser.PhoneNumberConfirmed = true;
+                this._aspNetUserRepository.Update(aspNetUser);
+
+                string generatedResetPassword = null;
+                if (accountVerifyPhoneNumberConfirmation.requestPasswordResetToken)
+                {
+                    generatedResetPassword = await this._userManager.GeneratePasswordResetTokenAsync(applicationUser);
+                    if (string.IsNullOrWhiteSpace(generatedResetPassword))
+                        throw new InvalidOperationException($"Could not generate reset password.");
+                }
+
+                return this.Ok(new
+                {
+                    id = aspNetUser.Id,
+                    userName = aspNetUser.UserName,
+                    phoneNumber = aspNetUser.PhoneNumber,
+                    resetPasswordToken = generatedResetPassword
+                });
             }
             catch (Exception ex)
             {
