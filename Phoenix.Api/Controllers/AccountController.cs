@@ -102,6 +102,7 @@ namespace Phoenix.Api.Controllers
             return this.Ok();
         }
 
+        [AllowAnonymous]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] AccountResetPassword accountResetPassword)
         {
@@ -134,6 +135,7 @@ namespace Phoenix.Api.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpPost("sendPhoneNumberConfirmation")]
         public async Task<IActionResult> SendPhoneNumberConfirmation([FromBody] AccountSendPhoneNumberConfirmation accountSendPhoneNumberConfirmationRpc)
         {
@@ -149,7 +151,7 @@ namespace Phoenix.Api.Controllers
             {
                 ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber);
                 if (applicationUser == null)
-                    return this.BadRequest(new { message = $"Could not find user by phone number." });
+                    throw new InvalidOperationException($"Could not find user by phone number.");
 
                 Random rnd = new Random();
                 int pinCode = rnd.Next(1, 10000);
@@ -170,6 +172,7 @@ namespace Phoenix.Api.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("verifyPhoneNumberConfirmation")]
         public async Task<IActionResult> VerifyPhoneNumberConfirmation([FromBody] AccountVerifyPhoneNumberConfirmation accountVerifyPhoneNumberConfirmation)
         {

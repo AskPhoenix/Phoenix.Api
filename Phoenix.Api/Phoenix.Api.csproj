@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.21.2.23</Version>
+    <Version>0.21.2.24</Version>
     <Authors>AskPhoenix</Authors>
     <ApplicationInsightsResourceId>/subscriptions/158d7265-c8df-4fbd-96df-1d003a650372/resourceGroups/PhoenixRsrcG/providers/microsoft.insights/components/PhoenixApi_Insights</ApplicationInsightsResourceId>
   </PropertyGroup>
