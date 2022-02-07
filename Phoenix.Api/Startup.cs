@@ -72,6 +72,7 @@ namespace Phoenix.Api
                     //    NamingStrategy = new Newtonsoft.Json.Serialization.DefaultNamingStrategy()
                     //};
                 });
+            services.AddApplicationInsightsTelemetry();
             //services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
         }
 
