@@ -1,59 +1,132 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Talagozis.Logging;
-using Talagozis.Logging.ColoredConsole;
-using Talagozis.Logging.File;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Phoenix.DataHandle.Identity;
+using Phoenix.DataHandle.Main.Models;
+using Phoenix.DataHandle.Sms;
+using System.Text;
 
-namespace Phoenix.Api
-{
-    public static class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure Web Host Defaults
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
+// Add services to the container.
+Action<DbContextOptionsBuilder> buildDbContextOptions = o =>
+    o.UseLazyLoadingProxies()
+    .UseSqlServer(builder.Configuration.GetConnectionString("PhoenixConnection"));
+
+builder.Services.AddDbContext<ApplicationContext>(buildDbContextOptions);
+builder.Services.AddDbContext<PhoenixContext>(buildDbContextOptions);
+
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
     {
-        public static void Main(string[] args)
+        o.User.AllowedUserNameCharacters = null;
+        o.Password.RequireDigit = false;
+        o.Password.RequireLowercase = false;
+        o.Password.RequireNonAlphanumeric = false;
+        o.Password.RequireUppercase = false;
+        o.Password.RequiredLength = 6;
+    })
+    .AddRoles<ApplicationRole>()
+    .AddUserStore<ApplicationStore>()
+    .AddUserManager<ApplicationUserManager>()
+    .AddEntityFrameworkStores<ApplicationContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options => 
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                    webBuilder.ConfigureKestrel((context, options) => options.AddServerHeader = false);
-                })
-                .ConfigureServices(serviceCollection => { serviceCollection.AddLoggerBackgroundService(); })
-                .ConfigureLogging((hostBuilderContext, loggingBuilder) =>
-                {
-                    loggingBuilder.ClearProviders();
-                    loggingBuilder.AddConfiguration(hostBuilderContext.Configuration.GetSection("Logging"));
-                    loggingBuilder.SetMinimumLevel(LogLevel.Trace);
+// TODO: Make sure this is not needed
+// builder.Services.AddCors();
 
-                    loggingBuilder.AddFile(a =>
-                    {
-                        a.folderPath = Path.Combine(Directory.GetCurrentDirectory(), "../logs/api/");
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Debug
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Warning
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Error
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Critical
-                        });
-                    });
-                    loggingBuilder.AddColoredConsole(hostBuilderContext.Configuration.GetSection("Logging:ColoredConsole"));
+builder.Services.AddScoped<ISmsService>(_ => 
+    new SmsService(builder.Configuration["NexmoSMS:ApiKey"], builder.Configuration["NexmoSMS:ApiSecret"]));
+builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
-                });
-    }
+builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["ApplicationInsights:ConnectionString"]);
+
+builder.Services.AddControllers()
+    .AddNewtonsoftJson();
+
+// TODO: Write detailed documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Configure Logging
+// TODO: Create File Logging & on app insights
+builder.Logging.ClearProviders();
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
+builder.Logging.AddSimpleConsole();
+builder.Logging.AddDebug();
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    // app.UseDatabaseErrorPage();
 }
+else
+{
+    app.UseHsts();
+}
+
+// TODO: Hide Swagger documentation
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseHttpsRedirection();
+
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+
+app.UseRouting();
+
+app.UseAuthentication();
+
+// TODO: What is this?
+//app.Use(async (context, next) =>
+//{
+//    if (context is null)
+//        throw new ArgumentNullException(nameof(context));
+
+//    var logger = context.RequestServices.GetService<ILogger>();
+//    if (logger is null)
+//        return;
+
+//    var claimsPrincipal = context?.User;
+//    if (claimsPrincipal is null)
+//    {
+//        logger.LogTrace("No authorized user is set");
+//        return;
+//    }
+
+//    logger.LogTrace("{NameIdentifier}: {NameIdentifierValue}", nameof(ClaimTypes.NameIdentifier),
+//        claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+//    logger.LogTrace("{Role}s: {RoleValue}", nameof(ClaimTypes.Role),
+//        string.Join(", ", claimsPrincipal.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value)));
+
+//    await next(context!);
+//});
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
