@@ -5,12 +5,12 @@ namespace Phoenix.Api.Models
 {
     public class BasicTokenRequest
     {
-        [JsonProperty("phone")]
         [Required]
+        [JsonProperty("phone")]
         public string Phone { get; set; } = null!;
 
-        [JsonProperty("password")]
         [Required]
+        [JsonProperty("password")]
         public string Password { get; set; } = null!;
     }
 }

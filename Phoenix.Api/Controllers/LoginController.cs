@@ -25,17 +25,16 @@ namespace Phoenix.Api.Controllers
             _userManager = userManager;
         }
 
+        // TODO: Verify that the [FromBody] and ModelState.IsValid are not required for [ApiController]
+
         [AllowAnonymous]
         [HttpPost("authenticate/basic")]
-        public async Task<IActionResult> LoginBasicAsync([FromBody] BasicTokenRequest tokenRequest)
+        public async Task<IActionResult> LoginBasicAsync(BasicTokenRequest tokenRequest)
         {
             _logger.LogInformation("Api -> Login -> Authenticate -> Basic");
 
             if (tokenRequest is null)
                 throw new ArgumentNullException(nameof(tokenRequest));
-
-            if (!this.ModelState.IsValid)
-                return BadRequest(this.ModelState);
 
             try
             {
@@ -54,15 +53,12 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate/facebook")]
-        public async Task<IActionResult> LoginFacebookAsync([FromBody] FacebookTokenRequest tokenRequest)
+        public async Task<IActionResult> LoginFacebookAsync(FacebookTokenRequest tokenRequest)
         {
             _logger.LogInformation("Api -> Authentication -> Authenticate -> Facebook");
 
             if (tokenRequest is null)
                 throw new ArgumentNullException(nameof(tokenRequest));
-
-            if (!this.ModelState.IsValid)
-                return BadRequest(this.ModelState);
 
             try
             {
