@@ -1,3 +1,3 @@
 # Phoenix.Api
  
-An Api for accessing data on PhoenixDB from outer applications
+An API to wrap AskPhoenix backend operations
