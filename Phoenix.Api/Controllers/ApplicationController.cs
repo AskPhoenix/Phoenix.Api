@@ -12,7 +12,8 @@ namespace Phoenix.Api.Controllers
         protected readonly ILogger<ApplicationController> _logger;
         protected readonly ApplicationUserManager _userManager;
 
-        protected ApplicationController(ILogger<ApplicationController> logger,
+        protected ApplicationController(
+            ILogger<ApplicationController> logger,
             ApplicationUserManager userManager)
         {
             _logger = logger;

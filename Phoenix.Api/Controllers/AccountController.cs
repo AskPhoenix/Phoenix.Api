@@ -29,10 +29,12 @@ namespace Phoenix.Api.Controllers
             : base(logger, userManager)
         {
             _userRepository = new(phoenixContext);
-            _userRepository.Include(u => u.Courses);
-            _userRepository.Include(u => u.OneTimeCodes);
             _otcRepository = new(phoenixContext);
             _smsService = smsService;
+
+            // TODO: Make sure these Includes are not needed
+            //_userRepository.Include(u => u.Courses);
+            //_userRepository.Include(u => u.OneTimeCodes);
         }
 
         [HttpGet("me")]
@@ -49,7 +51,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(AccountChangePassword changePasswordModel)
+        public async Task<IActionResult> ChangePasswordAsync(AccountChangePassword changePasswordModel)
         {
             _logger.LogInformation("Api -> Account -> ChangePassword");
 
@@ -76,7 +78,7 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(AccountResetPassword resetPasswordModel)
+        public async Task<IActionResult> ResetPasswordAsync(AccountResetPassword resetPasswordModel)
         {
             _logger.LogInformation("Api -> Account -> ResetPassword");
 
@@ -101,7 +103,7 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("verification/send-otc")]
-        public async Task<IActionResult> SendVerificationOTC(AccountSendVerificationOTC sendVerificationOTCModel)
+        public async Task<IActionResult> SendVerificationOTCAsync(AccountSendVerificationOTC sendVerificationOTCModel)
         {
             _logger.LogInformation("Api -> Account -> Verification -> SendOTC");
 
@@ -129,7 +131,7 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("verification/check-otc")]
-        public async Task<IActionResult> CheckVerificationOTC(AccountCheckVerificationOTC checkVerificationOTCModel)
+        public async Task<IActionResult> CheckVerificationOTCAsync(AccountCheckVerificationOTC checkVerificationOTCModel)
         {
             _logger.LogInformation("Api -> Account -> -> Verification -> CheckOTC");
 

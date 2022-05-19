@@ -13,8 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 // Add services to the container.
-Action<DbContextOptionsBuilder> buildDbContextOptions = o =>
-    o.UseLazyLoadingProxies()
+Action<DbContextOptionsBuilder> buildDbContextOptions = o => o
+    .UseLazyLoadingProxies()
     .UseSqlServer(builder.Configuration.GetConnectionString("PhoenixConnection"));
 
 builder.Services.AddDbContext<ApplicationContext>(buildDbContextOptions);
