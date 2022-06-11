@@ -37,7 +37,7 @@ namespace Phoenix.Api.Controllers
             if (exam is null)
                 return null;
 
-            return new(exam, include: true);
+            return new ExamApi(exam, include: true);
         }
 
         // TODO: Check if the list properties are affected.
@@ -49,7 +49,7 @@ namespace Phoenix.Api.Controllers
 
             if (examApi is null)
             {
-                _logger.LogError("Argument {arg} cannot be null.", nameof(ExamApi));
+                _logger.LogError("Argument {arg} cannot be null.", nameof(examApi));
                 return null;
             }
 
@@ -64,7 +64,7 @@ namespace Phoenix.Api.Controllers
 
             if (examApi is null)
             {
-                _logger.LogError("Argument {arg} cannot be null.", nameof(ExamApi));
+                _logger.LogError("Argument {arg} cannot be null.", nameof(examApi));
                 return null;
             }
 

@@ -69,7 +69,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}/Lecture")]
-        public async Task<IEnumerable<LectureApi>?> GetLectures(int id)
+        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Lecture", id);
 
@@ -78,7 +78,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}/Schedule")]
-        public async Task<IEnumerable<ScheduleApi>?> GetSchedules(int id)
+        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedule", id);
 
@@ -87,7 +87,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}/Book")]
-        public async Task<IEnumerable<BookApi>?> GetBooks(int id)
+        public async Task<IEnumerable<BookApi>?> GetBooksAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Book", id);
 
