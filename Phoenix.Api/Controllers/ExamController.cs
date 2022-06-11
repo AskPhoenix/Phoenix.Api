@@ -48,23 +48,27 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Exam -> Post");
 
             if (examApi is null)
-                throw new ArgumentNullException(nameof(examApi));
+            {
+                _logger.LogError("Argument {arg} cannot be null.", nameof(ExamApi));
+                return null;
+            }
 
             var exam = await _examRepository.CreateAsync((Exam)(IExam)examApi);
-
             return new ExamApi(exam, include: true);
         }
 
         [HttpPut("{id}")]
-        public async Task<ExamApi> PutAsync(int id, [FromBody] ExamApi examApi)
+        public async Task<ExamApi?> PutAsync(int id, [FromBody] ExamApi examApi)
         {
             _logger.LogInformation("Api -> Exam -> Put -> {id}", id);
 
             if (examApi is null)
-                throw new ArgumentNullException(nameof(examApi));
+            {
+                _logger.LogError("Argument {arg} cannot be null.", nameof(ExamApi));
+                return null;
+            }
 
             var exam = await _examRepository.UpdateAsync((Exam)(IExam)examApi);
-
             return new ExamApi(exam, include: true);
         }
 

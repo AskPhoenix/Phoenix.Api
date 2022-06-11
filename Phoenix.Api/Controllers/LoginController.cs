@@ -34,7 +34,7 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Login -> Authenticate -> Basic");
 
             if (tokenRequest is null)
-                throw new ArgumentNullException(nameof(tokenRequest));
+                return BadRequest(nameof(tokenRequest) + " argument cannot be null.");
 
             try
             {
@@ -47,7 +47,7 @@ namespace Phoenix.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Basic authentication failed");
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError,  "Authentication failed");
             }
         }
 
@@ -58,7 +58,7 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Authentication -> Authenticate -> Facebook");
 
             if (tokenRequest is null)
-                throw new ArgumentNullException(nameof(tokenRequest));
+                return BadRequest(nameof(tokenRequest) + " argument cannot be null.");
 
             try
             {
@@ -71,7 +71,7 @@ namespace Phoenix.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Facebook authentication failed");
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError, "Authentication failed.");
             }
         }
 

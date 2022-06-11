@@ -20,6 +20,16 @@ namespace Phoenix.Api.Controllers
             _userManager = userManager;
         }
 
+        protected bool CheckUserAuth()
+        {
+            bool isAuth = this.AppUser is null;
+
+            if (!isAuth)
+                _logger.LogError("User is not authorized");
+
+            return isAuth;
+        }
+
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             await base.OnActionExecutionAsync(context, next);
@@ -28,20 +38,20 @@ namespace Phoenix.Api.Controllers
 
             if (identity is null)
             {
-                _logger.LogTrace("No Identity is provided");
+                _logger.LogError("No Identity is provided");
                 return;
             }
 
             var userClaims = identity.Claims;
             if (!userClaims.Any(c => c.Type == ClaimTypes.NameIdentifier))
             {
-                _logger.LogTrace("No claim for username found in the Identity");
+                _logger.LogError("No claim for username found in the Identity");
                 return;
             }
 
             this.AppUser = await _userManager.FindByNameAsync(userClaims.Single(c => c.Type == ClaimTypes.NameIdentifier).Value);
             
-            _logger.LogTrace("User with ID {Id} is authorized", this.AppUser.Id);
+            _logger.LogInformation("User with ID {Id} is authorized", this.AppUser.Id);
         }
     }
 }

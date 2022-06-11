@@ -38,14 +38,14 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("me")]
-        public async Task<UserApi> MeAsync()
+        public async Task<UserApi?> MeAsync()
         {
             _logger.LogInformation("Api -> Account -> Me");
 
-            if (this.AppUser is null)
-                throw new InvalidOperationException("User not authorized");
+            if (!this.CheckUserAuth())
+                return null;
 
-            User user = (await _userRepository.FindPrimaryAsync(AppUser.Id))!;
+            User user = (await _userRepository.FindPrimaryAsync(AppUser!.Id))!;
 
             return new UserApi(user, include: true);
         }
@@ -56,20 +56,23 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Account -> ChangePassword");
 
             if (changePasswordModel is null)
-                throw new ArgumentNullException(nameof(changePasswordModel));
-            if (this.AppUser is null)
-                throw new InvalidOperationException("User not authorized");
+                return BadRequest(nameof(changePasswordModel) + " argument cannot be null.");
+            if (!this.CheckUserAuth())
+                return Unauthorized();
 
-            IdentityResult result = await _userManager.ChangePasswordAsync(this.AppUser, changePasswordModel.OldPassword, changePasswordModel.NewPassword);
+            IdentityResult result = await _userManager.ChangePasswordAsync(
+                this.AppUser!, changePasswordModel.OldPassword, changePasswordModel.NewPassword);
 
             if (!result.Succeeded)
             {
-                _logger.LogError("{Errors}", string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
+                _logger.LogError("{Errors}", 
+                    string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
 
-                return BadRequest(new
+                return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    code = string.Join(", ", result.Errors.Select(a => a.Code)),
-                    message = $"Could not change password: {string.Join(", ", result.Errors.Select(a => a.Description))}"
+                    error_code = string.Join(", ", result.Errors.Select(a => a.Code)),
+                    error_message = $"Could not change password: " +
+                        $"{string.Join(", ", result.Errors.Select(a => a.Description))}"
                 });
             }
 
@@ -83,15 +86,16 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Account -> ResetPassword");
 
             if (resetPasswordModel is null)
-                throw new ArgumentNullException(nameof(resetPasswordModel));
+                return BadRequest(nameof(resetPasswordModel) + " argument cannot be null.");
 
             var appUser = await _userManager.FindByIdAsync(resetPasswordModel.Id.ToString());
             if (appUser is null)
-                throw new InvalidOperationException($"Could not find a user with ID {resetPasswordModel.Id}");
+                return BadRequest($"Could not find a user with ID {resetPasswordModel.Id}");
 
             IdentityResult result = await _userManager.ResetPasswordAsync(appUser, resetPasswordModel.Token, resetPasswordModel.NewPassword);
             if (!result.Succeeded)
-                throw new InvalidOperationException($"Could not generate reset password, error: {string.Join(", ", result.Errors)}.");
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Could not generate reset password, error: {string.Join(", ", result.Errors)}.");
 
             return Ok(new
             {
@@ -108,11 +112,11 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Account -> Verification -> SendOTC");
 
             if (sendVerificationOTCModel is null)
-                throw new ArgumentNullException(nameof(sendVerificationOTCModel));
+                return BadRequest(nameof(sendVerificationOTCModel) + " argument cannot be null.");
 
             var appUser = await _userManager.FindByPhoneNumberAsync(sendVerificationOTCModel.PhoneNumber);
             if (appUser is null)
-                throw new InvalidOperationException($"Could not find a user with phone number {sendVerificationOTCModel.PhoneNumber}");
+                return BadRequest($"Could not find a user with phone number {sendVerificationOTCModel.PhoneNumber}");
 
             OneTimeCode otc = new()
             {
@@ -136,18 +140,18 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Account -> -> Verification -> CheckOTC");
 
             if (checkVerificationOTCModel is null)
-                throw new ArgumentNullException(nameof(checkVerificationOTCModel));
+                return BadRequest(nameof(checkVerificationOTCModel) + " argument cannot be null.");
 
             var appUser = await _userManager.FindByPhoneNumberAsync(checkVerificationOTCModel.PhoneNumber);
             if (appUser is null)
-                throw new InvalidOperationException($"Could not find a user with phone number {checkVerificationOTCModel.PhoneNumber}.");
+                return BadRequest($"Could not find a user with phone number {checkVerificationOTCModel.PhoneNumber}.");
 
             User user = (await _userRepository.FindPrimaryAsync(appUser.Id))!;
             var userValidOTCs = user.OneTimeCodes
                 .Where(c => c.ExpiresAt >= DateTime.UtcNow);
 
             if (!userValidOTCs.Any(c => c.Token == checkVerificationOTCModel.PinCode))
-                throw new InvalidOperationException($"Pin code is incorrect or has expired");
+                return BadRequest($"Pin code is incorrect or has expired");
 
             appUser.PhoneNumberConfirmed = true;
             await _userManager.UpdateAsync(appUser);
@@ -157,7 +161,8 @@ namespace Phoenix.Api.Controllers
             {
                 generatedResetPassword = await _userManager.GeneratePasswordResetTokenAsync(appUser);
                 if (string.IsNullOrWhiteSpace(generatedResetPassword))
-                    throw new InvalidOperationException($"Could not generate reset password");
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                        "Could not generate reset password");
             }
 
             return Ok(new
