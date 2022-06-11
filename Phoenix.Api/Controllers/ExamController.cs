@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -10,22 +11,39 @@ namespace Phoenix.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ExamController : Controller
+    public class ExamController : ApplicationController
     {
-        private readonly ILogger<ExamController> _logger;
         private readonly ExamRepository _examRepository;
 
         public ExamController(
             ILogger<ExamController> logger,
+            ApplicationUserManager userManager,
             PhoenixContext phoenixContext)
+            : base(logger, userManager)
         {
-            _logger = logger;
             _examRepository = new(phoenixContext);
+        }
 
-            // TODO: Check if Include is ok
-            _examRepository.Include(e => e.Lecture);
-            _examRepository.Include(e => e.Grades);
-            _examRepository.Include(e => e.Materials);
+        private async Task<Exam?> GetExamAsync(int id)
+        {
+            if (!this.CheckUserAuth())
+                return null;
+
+            var exam = await _examRepository.FindPrimaryAsync(id);
+            if (exam is null)
+            {
+                _logger.LogError("No exam found with id {id}", id);
+                return null;
+            }
+
+            if (!exam.Lecture.Course.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
+            {
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access exam with id {id}", id);
+                return null;
+            }
+
+            return exam;
         }
 
         [HttpGet("{id}")]
@@ -33,14 +51,15 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Exam -> Get -> {id}", id);
 
-            var exam = await _examRepository.FindPrimaryAsync(id);
+            var exam = await this.GetExamAsync(id);
             if (exam is null)
                 return null;
 
             return new ExamApi(exam, include: true);
         }
 
-        // TODO: Check if the list properties are affected.
+        // TODO: Check if lectures are created for the exam.
+        // TODO: Check if the list properties are affected. E.g. add material
         // If not, a method that converts a ModelApi to ModelEntity will be needed inside each ModelApi
         [HttpPost]
         public async Task<ExamApi?> PostAsync([FromBody] ExamApi examApi)
@@ -68,6 +87,10 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
+            var oldExam = await this.GetExamAsync(id);
+            if (oldExam is null)
+                return null;
+
             var exam = await _examRepository.UpdateAsync((Exam)(IExam)examApi);
             return new ExamApi(exam, include: true);
         }
@@ -76,6 +99,10 @@ namespace Phoenix.Api.Controllers
         public async Task DeleteAsync(int id)
         {
             _logger.LogInformation("Api -> Exam -> Delete -> {id}", id);
+
+            var exam = await this.GetExamAsync(id);
+            if (exam is null)
+                return;
 
             await _examRepository.DeleteAsync(id);
         }

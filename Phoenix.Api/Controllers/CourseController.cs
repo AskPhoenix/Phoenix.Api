@@ -13,7 +13,8 @@ namespace Phoenix.Api.Controllers
     {
         private readonly CourseRepository _courseRepository;
 
-        public CourseController(ILogger<CourseController> logger,
+        public CourseController(
+            ILogger<CourseController> logger,
             ApplicationUserManager userManager,
             PhoenixContext phoenixContext)
             : base(logger, userManager)
@@ -68,28 +69,28 @@ namespace Phoenix.Api.Controllers
             return new CourseApi(course, include: true);
         }
 
-        [HttpGet("{id}/Lecture")]
+        [HttpGet("{id}/Lectures")]
         public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id)
         {
-            _logger.LogInformation("Api -> Course -> Get -> {id} -> Lecture", id);
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Lectures", id);
 
             var course = await this.GetCourseAsync(id);
             return course?.Lectures.Select(l => new LectureApi(l, include: true));
         }
 
-        [HttpGet("{id}/Schedule")]
+        [HttpGet("{id}/Schedules")]
         public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id)
         {
-            _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedule", id);
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedules", id);
 
             var course = await this.GetCourseAsync(id);
             return course?.Schedules.Select(s => new ScheduleApi(s, include: true));
         }
 
-        [HttpGet("{id}/Book")]
+        [HttpGet("{id}/Books")]
         public async Task<IEnumerable<BookApi>?> GetBooksAsync(int id)
         {
-            _logger.LogInformation("Api -> Course -> Get -> {id} -> Book", id);
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Books", id);
 
             var course = await this.GetCourseAsync(id);
             return course?.Books.Select(b => new BookApi(b));

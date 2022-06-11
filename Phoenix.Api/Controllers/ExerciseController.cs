@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -9,16 +10,39 @@ namespace Phoenix.Api.Controllers
 {
     [Authorize]
     [Route("api/[controller]")]
-    public class ExerciseController : Controller
+    public class ExerciseController : ApplicationController
     {
-        private readonly ILogger<ExerciseController> _logger;
         private readonly ExerciseRepository _exerciseRepository;
 
-        public ExerciseController(ILogger<ExerciseController> logger,
+        public ExerciseController(
+            ILogger<ExerciseController> logger,
+            ApplicationUserManager userManager,
             PhoenixContext phoenixContext)
+            : base(logger, userManager)
         {
-            _logger = logger;
-            _exerciseRepository = new ExerciseRepository(phoenixContext);
+            _exerciseRepository = new(phoenixContext);
+        }
+
+        private async Task<Exercise?> GetExerciseAsync(int id)
+        {
+            if (!this.CheckUserAuth())
+                return null;
+
+            var exercise = await _exerciseRepository.FindPrimaryAsync(id);
+            if (exercise is null)
+            {
+                _logger.LogError("No exercise found with id {id}", id);
+                return null;
+            }
+
+            if (!exercise.Lecture.Course.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
+            {
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access exercise with id {id}", id);
+                return null;
+            }
+
+            return exercise;
         }
 
         [HttpGet("{id}")]
@@ -26,7 +50,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Exercise -> Get -> {id}", id);
 
-            var exercise = await _exerciseRepository.FindPrimaryAsync(id);
+            var exercise = await this.GetExerciseAsync(id);
             if (exercise is null)
                 return null;
 
@@ -59,6 +83,10 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
+            var oldExercise = await this.GetExerciseAsync(id);
+            if (oldExercise is null)
+                return null;
+
             var exercise = await _exerciseRepository.UpdateAsync((Exercise)(IExercise)exerciseApi);
             return new ExerciseApi(exercise, include: true);
         }
@@ -67,6 +95,10 @@ namespace Phoenix.Api.Controllers
         public async void Delete(int id)
         {
             _logger.LogInformation("Api -> Exercise -> Delete -> {id}", id);
+
+            var oldExercise = await this.GetExerciseAsync(id);
+            if (oldExercise is null)
+                return;
 
             await _exerciseRepository.DeleteAsync(id);
         }

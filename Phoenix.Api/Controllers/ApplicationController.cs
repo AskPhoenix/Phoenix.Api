@@ -35,21 +35,21 @@ namespace Phoenix.Api.Controllers
             await base.OnActionExecutionAsync(context, next);
 
             var identity = HttpContext.User.Identity as ClaimsIdentity;
-
             if (identity is null)
             {
-                _logger.LogError("No Identity is provided");
+                _logger.LogInformation("No Identity is provided");
                 return;
             }
 
             var userClaims = identity.Claims;
             if (!userClaims.Any(c => c.Type == ClaimTypes.NameIdentifier))
             {
-                _logger.LogError("No claim for username found in the Identity");
+                _logger.LogInformation("No claim for username found in the Identity");
                 return;
             }
 
-            this.AppUser = await _userManager.FindByNameAsync(userClaims.Single(c => c.Type == ClaimTypes.NameIdentifier).Value);
+            this.AppUser = await _userManager
+                .FindByNameAsync(userClaims.Single(c => c.Type == ClaimTypes.NameIdentifier).Value);
             
             _logger.LogInformation("User with ID {Id} is authorized", this.AppUser.Id);
         }
