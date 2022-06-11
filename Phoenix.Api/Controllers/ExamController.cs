@@ -46,6 +46,8 @@ namespace Phoenix.Api.Controllers
             return exam;
         }
 
+        // TODO: Grades?
+
         [HttpGet("{id}")]
         public async Task<ExamApi?> GetAsync(int id)
         {
