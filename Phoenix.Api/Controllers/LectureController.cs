@@ -24,7 +24,7 @@ namespace Phoenix.Api.Controllers
             _lectureRepository = new(phoenixContext);
         }
 
-        private async Task<Lecture?> GetLectureAsync(int id)
+        private async Task<Lecture?> FindAsync(int id)
         {
             if (!this.CheckUserAuth())
                 return null;
@@ -63,7 +63,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Lecture -> Get -> {id} -> Exercises", id);
 
-            var lecture = await this.GetLectureAsync(id);
+            var lecture = await this.FindAsync(id);
             if (lecture is null)
                 return null;
 
@@ -75,7 +75,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Lecture -> Get -> {id} -> Exams", id);
 
-            var lecture = await this.GetLectureAsync(id);
+            var lecture = await this.FindAsync(id);
             if (lecture is null)
                 return null;
 
@@ -87,7 +87,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Lecture -> Get -> {id} -> Students", id);
 
-            var lecture = await this.GetLectureAsync(id);
+            var lecture = await this.FindAsync(id);
             if (lecture is null)
                 return null;
 

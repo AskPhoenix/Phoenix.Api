@@ -24,7 +24,7 @@ namespace Phoenix.Api.Controllers
             _examRepository = new(phoenixContext);
         }
 
-        private async Task<Exam?> GetExamAsync(int id)
+        private async Task<Exam?> FindAsync(int id)
         {
             if (!this.CheckUserAuth())
                 return null;
@@ -51,7 +51,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Exam -> Get -> {id}", id);
 
-            var exam = await this.GetExamAsync(id);
+            var exam = await this.FindAsync(id);
             if (exam is null)
                 return null;
 
@@ -87,7 +87,7 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var oldExam = await this.GetExamAsync(id);
+            var oldExam = await this.FindAsync(id);
             if (oldExam is null)
                 return null;
 
@@ -100,7 +100,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Exam -> Delete -> {id}", id);
 
-            var exam = await this.GetExamAsync(id);
+            var exam = await this.FindAsync(id);
             if (exam is null)
                 return;
 

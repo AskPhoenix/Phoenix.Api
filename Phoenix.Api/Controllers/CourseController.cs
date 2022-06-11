@@ -22,7 +22,7 @@ namespace Phoenix.Api.Controllers
             _courseRepository = new(phoenixContext);
         }
 
-        private async Task<Course?> GetCourseAsync(int id)
+        private async Task<Course?> FindAsync(int id)
         {
             if (!this.CheckUserAuth())
                 return null;
@@ -62,7 +62,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Course -> Get {id}", id);
 
-            var course = await this.GetCourseAsync(id);
+            var course = await this.FindAsync(id);
             if (course is null)
                 return null;
 
@@ -74,7 +74,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Lectures", id);
 
-            var course = await this.GetCourseAsync(id);
+            var course = await this.FindAsync(id);
             return course?.Lectures.Select(l => new LectureApi(l, include: true));
         }
 
@@ -83,7 +83,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedules", id);
 
-            var course = await this.GetCourseAsync(id);
+            var course = await this.FindAsync(id);
             return course?.Schedules.Select(s => new ScheduleApi(s, include: true));
         }
 
@@ -92,7 +92,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Books", id);
 
-            var course = await this.GetCourseAsync(id);
+            var course = await this.FindAsync(id);
             return course?.Books.Select(b => new BookApi(b));
         }
     }

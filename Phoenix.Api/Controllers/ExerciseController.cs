@@ -23,7 +23,7 @@ namespace Phoenix.Api.Controllers
             _exerciseRepository = new(phoenixContext);
         }
 
-        private async Task<Exercise?> GetExerciseAsync(int id)
+        private async Task<Exercise?> FindAsync(int id)
         {
             if (!this.CheckUserAuth())
                 return null;
@@ -50,7 +50,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger.LogInformation("Api -> Exercise -> Get -> {id}", id);
 
-            var exercise = await this.GetExerciseAsync(id);
+            var exercise = await this.FindAsync(id);
             if (exercise is null)
                 return null;
 
@@ -83,7 +83,7 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var oldExercise = await this.GetExerciseAsync(id);
+            var oldExercise = await this.FindAsync(id);
             if (oldExercise is null)
                 return null;
 
@@ -92,11 +92,11 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
             _logger.LogInformation("Api -> Exercise -> Delete -> {id}", id);
 
-            var oldExercise = await this.GetExerciseAsync(id);
+            var oldExercise = await this.FindAsync(id);
             if (oldExercise is null)
                 return;
 

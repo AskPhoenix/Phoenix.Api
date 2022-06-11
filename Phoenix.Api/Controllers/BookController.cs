@@ -23,6 +23,7 @@ namespace Phoenix.Api.Controllers
             _bookRepository = new(phoenixContext);
         }
 
+        // TODO: Return Action Result with object, instead of the object itself ?
         [HttpGet]
         public IEnumerable<BookApi>? Get()
         {
