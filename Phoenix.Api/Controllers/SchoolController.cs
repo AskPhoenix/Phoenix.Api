@@ -14,10 +14,10 @@ namespace Phoenix.Api.Controllers
         private readonly SchoolRepository _schoolRepository;
 
         public SchoolController(
-            ILogger<SchoolController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<SchoolController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _schoolRepository = new(phoenixContext);
         }
@@ -52,7 +52,7 @@ namespace Phoenix.Api.Controllers
             if (!this.CheckUserAuth())
                 return null;
 
-            return this.AppUser?.User.Schools
+            return this.PhoenixUser?.Schools
                 .Select(s => new SchoolApi(s, include: true));
         }
 

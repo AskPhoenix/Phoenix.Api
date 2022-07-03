@@ -14,10 +14,10 @@ namespace Phoenix.Api.Controllers
         private readonly ScheduleRepository _scheduleRepository;
 
         public ScheduleController(
-            ILogger<ScheduleController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<ScheduleController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _scheduleRepository = new(phoenixContext);
         }
@@ -30,7 +30,7 @@ namespace Phoenix.Api.Controllers
             if (!this.CheckUserAuth())
                 return null;
 
-            return this.AppUser?.User.Courses
+            return this.PhoenixUser?.Courses
                 .SelectMany(c => c.Schedules.Select(s => new ScheduleApi(s, include: true)));
         }
 

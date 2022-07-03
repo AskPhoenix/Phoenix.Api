@@ -17,18 +17,16 @@ namespace Phoenix.Api.Controllers
     {
         private readonly static TimeSpan pinCodeExpiration = new(0, 10, 0);
 
-        private readonly UserRepository _userRepository;
         private readonly OneTimeCodeRepository _otcRepository;
         private readonly ISmsService _smsService;
 
         public AccountController(
-            ILogger<AccountController> logger,
-            ApplicationUserManager userManager,
+            ISmsService smsService,
             PhoenixContext phoenixContext,
-            ISmsService smsService) 
-            : base(logger, userManager)
+            ApplicationUserManager userManager,
+            ILogger<AccountController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            _userRepository = new(phoenixContext);
             _otcRepository = new(phoenixContext);
             _smsService = smsService;
 

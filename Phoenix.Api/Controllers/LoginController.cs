@@ -18,11 +18,14 @@ namespace Phoenix.Api.Controllers
         private readonly IConfiguration _configuration;
         private readonly ApplicationUserManager _userManager;
 
-        public LoginController(ApplicationUserManager userManager, ILogger<LoginController> logger, IConfiguration configuration)
+        public LoginController(
+            ApplicationUserManager userManager,
+            ILogger<LoginController> logger,
+            IConfiguration configuration)
         {
             _logger = logger;
-            _configuration = configuration;
             _userManager = userManager;
+            _configuration = configuration;
         }
 
         // TODO: Verify that the [FromBody] and ModelState.IsValid are not required for [ApiController]

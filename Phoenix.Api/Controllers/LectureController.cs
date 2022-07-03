@@ -16,10 +16,10 @@ namespace Phoenix.Api.Controllers
         private readonly LectureRepository _lectureRepository;
 
         public LectureController(
-            ILogger<LectureController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<LectureController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _lectureRepository = new(phoenixContext);
         }
@@ -91,9 +91,16 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return lecture.Course.Users
-                .Where(u => u.AspNetUser.Roles.Any(r => r.Rank == RoleRank.Student))
-                .Select(u => new UserApi(u, include: true));
+            // TODO: Try to improve
+            var users = lecture.Course.Users;
+            foreach (var user in users)
+            {
+                var appuser = await _userManager.FindByIdAsync(user.AspNetUserId.ToString());
+                if (!await _userManager.IsInRoleAsync(appuser, RoleRank.Student.ToNormalizedString()))
+                    users.Remove(user);
+            }
+
+            return users.Select(u => new UserApi(u, include: true));
         }
 
         [HttpPost]

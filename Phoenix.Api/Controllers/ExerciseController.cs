@@ -15,10 +15,10 @@ namespace Phoenix.Api.Controllers
         private readonly ExerciseRepository _exerciseRepository;
 
         public ExerciseController(
-            ILogger<ExerciseController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<ExerciseController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _exerciseRepository = new(phoenixContext);
         }

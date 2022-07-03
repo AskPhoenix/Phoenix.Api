@@ -15,10 +15,10 @@ namespace Phoenix.Api.Controllers
         private readonly MaterialRepository _materialRepository;
 
         public MaterialController(
-            ILogger<MaterialController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext) 
-            : base(logger, userManager)
+            ILogger<BookController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _materialRepository = new(phoenixContext);
         }

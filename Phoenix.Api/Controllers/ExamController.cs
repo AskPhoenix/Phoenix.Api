@@ -16,10 +16,10 @@ namespace Phoenix.Api.Controllers
         private readonly ExamRepository _examRepository;
 
         public ExamController(
-            ILogger<ExamController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<ExamController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _examRepository = new(phoenixContext);
         }

@@ -15,10 +15,10 @@ namespace Phoenix.Api.Controllers
         private readonly BookRepository _bookRepository;
 
         public BookController(
-            ILogger<BookController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<BookController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _bookRepository = new(phoenixContext);
         }
@@ -32,7 +32,7 @@ namespace Phoenix.Api.Controllers
             if (!this.CheckUserAuth())
                 return null;
 
-            return this.AppUser?.User.Courses
+            return this.PhoenixUser?.Courses
                 .SelectMany(c => c.Books.Select(b => new BookApi(b)));
         }
 

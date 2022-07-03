@@ -14,10 +14,10 @@ namespace Phoenix.Api.Controllers
         private readonly CourseRepository _courseRepository;
 
         public CourseController(
-            ILogger<CourseController> logger,
+            PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
-            PhoenixContext phoenixContext)
-            : base(logger, userManager)
+            ILogger<CourseController> logger)
+            : base(phoenixContext, userManager, logger)
         {
             _courseRepository = new(phoenixContext);
         }
@@ -53,7 +53,7 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             // TODO: Check if lazy properties are loaded
-            return this.AppUser?.User.Courses
+            return this.PhoenixUser?.Courses
                 .Select(c => new CourseApi(c, include: true));
         }
 
