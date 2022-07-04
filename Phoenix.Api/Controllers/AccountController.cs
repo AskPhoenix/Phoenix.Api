@@ -10,7 +10,7 @@ using Phoenix.DataHandle.Sms;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ApiController]
     [Route("api/[controller]")]
     public class AccountController : ApplicationController

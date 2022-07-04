@@ -28,7 +28,7 @@ namespace Phoenix.Api.Controllers
 
         protected bool CheckUserAuth()
         {
-            bool isAuth = this.AppUser is null;
+            bool isAuth = this.AppUser is not null;
 
             if (!isAuth)
                 _logger.LogError("User is not authorized");
@@ -38,8 +38,6 @@ namespace Phoenix.Api.Controllers
 
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            await base.OnActionExecutionAsync(context, next);
-
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity is null)
             {
@@ -60,6 +58,8 @@ namespace Phoenix.Api.Controllers
             this.PhoenixUser = await _userRepository.FindPrimaryAsync(this.AppUser.Id);
             
             _logger.LogInformation("User with ID {Id} is authorized", this.AppUser.Id);
+
+            await base.OnActionExecutionAsync(context, next);
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Phoenix.Api.Controllers
                 if (appUser is null)
                     return NotFound("User not found");
 
-                return Ok(GenerateTokenAsync(appUser));
+                return Ok(await GenerateTokenAsync(appUser));
             }
             catch (Exception ex)
             {
@@ -69,7 +69,7 @@ namespace Phoenix.Api.Controllers
                 if (appUser is null)
                     return NotFound("User not found");
 
-                return Ok(GenerateTokenAsync(appUser));
+                return Ok(await GenerateTokenAsync(appUser));
             }
             catch (Exception ex)
             {
@@ -84,19 +84,19 @@ namespace Phoenix.Api.Controllers
 
             if (appUser is null)
             {
-                _logger.LogDebug("No User found with phone number {phone}", tokenRequest.Phone);
+                _logger.LogError("No User found with phone number {phone}", tokenRequest.Phone);
                 return null;
             }
 
-            if (!appUser.PhoneNumberConfirmed)
-            {
-                _logger.LogDebug("The phone number {phone} must be confirmed", appUser.PhoneNumber);
-                return null;
-            }
+            //if (!appUser.PhoneNumberConfirmed)
+            //{
+            //    _logger.LogError("The phone number {phone} must be confirmed", appUser.PhoneNumber);
+            //    return null;
+            //}
 
             if (!await this._userManager.CheckPasswordAsync(appUser, tokenRequest.Password))
             {
-                _logger.LogDebug("The password for user with phone number {phone} is not correct", appUser.PhoneNumber);
+                _logger.LogError("The password for user with phone number {phone} is not correct", appUser.PhoneNumber);
                 return null;
             }
 
@@ -136,7 +136,6 @@ namespace Phoenix.Api.Controllers
             var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.NameIdentifier, appUser.UserName),
-                new Claim(ClaimTypes.Email, appUser.Email),
                 new Claim(ClaimTypes.MobilePhone, appUser.PhoneNumber)
             };
             claims.AddRange((await _userManager.GetRolesAsync(appUser)).Select(r => new Claim(ClaimTypes.Role, r)));
@@ -145,7 +144,7 @@ namespace Phoenix.Api.Controllers
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.UtcNow.AddDays(1),
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
