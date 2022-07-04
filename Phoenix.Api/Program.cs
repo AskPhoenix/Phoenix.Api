@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Phoenix.DataHandle.Api;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Sms;
@@ -64,7 +66,42 @@ builder.Services.AddControllers()
 
 // TODO: Write detailed documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o =>
+{
+    o.EnableAnnotations();
+
+    // SwaggerDoc name refers to the name of the documention and is included in the endpoint path
+    o.SwaggerDoc("v3", new OpenApiInfo()
+    {
+        Title = "Egretta API",
+        Description = "A Rest API to handle Phoenix backend data.",
+        Version = "3.0"
+    });
+
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Enter the JWT Bearer token.",
+        In = ParameterLocation.Header,
+        Name = "JWT Authentication",
+        Type = SecuritySchemeType.Http,
+
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+    o.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+
+    o.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
+    });
+
+    o.SchemaFilter<SwaggerExcludeFilter>();
+});
 
 // Configure Logging
 // TODO: Create File Logging & on app insights
@@ -90,7 +127,7 @@ else
 
 // TODO: Hide Swagger documentation
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(o => o.SwaggerEndpoint("/swagger/v3/swagger.json", "Egretta v3"));
 
 app.UseHttpsRedirection();
 
