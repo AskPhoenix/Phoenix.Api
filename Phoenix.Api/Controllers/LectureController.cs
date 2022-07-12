@@ -47,7 +47,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<LectureApi?> GetAsync(int id)
+        public async Task<LectureApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Lecture -> Get {id}", id);
 
@@ -55,7 +55,7 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return new LectureApi(lecture, include: true);
+            return new LectureApi(lecture, include);
         }
 
         [HttpGet("{id}/Exercises")]
@@ -67,7 +67,7 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return lecture.Exercises.Select(e => new ExerciseApi(e, include: true));
+            return lecture.Exercises.Select(e => new ExerciseApi(e, include: false));
         }
 
         [HttpGet("{id}/Exams")]
@@ -79,11 +79,11 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return lecture.Exams.Select(e => new ExamApi(e, include: true));
+            return lecture.Exams.Select(e => new ExamApi(e, include: false));
         }
 
         [HttpGet("{id}/Students")]
-        public async Task<IEnumerable<UserApi>?> GetStudentsAsync(int id)
+        public async Task<IEnumerable<UserApi>?> GetStudentsAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Lecture -> Get -> {id} -> Students", id);
 
@@ -100,7 +100,7 @@ namespace Phoenix.Api.Controllers
                     users.Remove(user);
             }
 
-            return users.Select(u => new UserApi(u, include: true));
+            return users.Select(u => new UserApi(u, include));
         }
 
         [HttpPost]
@@ -115,7 +115,7 @@ namespace Phoenix.Api.Controllers
             }
 
             var lecture = await _lectureRepository.CreateAsync((Lecture)(ILecture)lectureApi);
-            return new LectureApi(lecture, include: true);
+            return new LectureApi(lecture, include: false);
         }
     }
 }

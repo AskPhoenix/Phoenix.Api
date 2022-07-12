@@ -49,7 +49,7 @@ namespace Phoenix.Api.Controllers
         // TODO: Grades?
 
         [HttpGet("{id}")]
-        public async Task<ExamApi?> GetAsync(int id)
+        public async Task<ExamApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Exam -> Get -> {id}", id);
 
@@ -57,7 +57,7 @@ namespace Phoenix.Api.Controllers
             if (exam is null)
                 return null;
 
-            return new ExamApi(exam, include: true);
+            return new ExamApi(exam, include);
         }
 
         // TODO: Check if lectures are created for the exam.
@@ -75,7 +75,7 @@ namespace Phoenix.Api.Controllers
             }
 
             var exam = await _examRepository.CreateAsync((Exam)(IExam)examApi);
-            return new ExamApi(exam, include: true);
+            return new ExamApi(exam, include: false);
         }
 
         [HttpPut("{id}")]
@@ -94,7 +94,7 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             var exam = await _examRepository.UpdateAsync((Exam)(IExam)examApi);
-            return new ExamApi(exam, include: true);
+            return new ExamApi(exam, include: false);
         }
 
         [HttpDelete("{id}")]

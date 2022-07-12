@@ -45,7 +45,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<SchoolApi>? Get()
+        public IEnumerable<SchoolApi>? Get(bool include = false)
         {
             _logger.LogInformation("Api -> School -> Get");
 
@@ -53,11 +53,11 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             return this.PhoenixUser?.Schools
-                .Select(s => new SchoolApi(s, include: true));
+                .Select(s => new SchoolApi(s, include));
         }
 
         [HttpGet("{id}")]
-        public async Task<SchoolApi?> GetAsync(int id)
+        public async Task<SchoolApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> School -> Get {id}", id);
 
@@ -65,11 +65,11 @@ namespace Phoenix.Api.Controllers
             if (school is null)
                 return null;
 
-            return new SchoolApi(school, include: true);
+            return new SchoolApi(school, include);
         }
 
         [HttpGet("{id}/Classrooms")]
-        public async Task<IEnumerable<ClassroomApi>?> GetClassroomsAsync(int id)
+        public async Task<IEnumerable<ClassroomApi>?> GetClassroomsAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> School -> {id} -> Classrooms", id);
 
@@ -77,11 +77,11 @@ namespace Phoenix.Api.Controllers
             if (school is null)
                 return null;
 
-            return school.Classrooms.Select(c => new ClassroomApi(c, include: true));
+            return school.Classrooms.Select(c => new ClassroomApi(c, include));
         }
 
         [HttpGet("{id}/Courses")]
-        public async Task<IEnumerable<CourseApi>?> GetCoursesAsync(int id)
+        public async Task<IEnumerable<CourseApi>?> GetCoursesAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> School -> {id} -> Courses", id);
             
@@ -89,7 +89,7 @@ namespace Phoenix.Api.Controllers
             if (school is null)
                 return null;
 
-            return school.Courses.Select(c => new CourseApi(c, include: true));
+            return school.Courses.Select(c => new CourseApi(c, include));
         }
     }
 }

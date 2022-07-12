@@ -46,7 +46,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<MaterialApi?> GetAsync(int id)
+        public async Task<MaterialApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Material -> Get {id}", id);
 
@@ -54,7 +54,7 @@ namespace Phoenix.Api.Controllers
             if (material is null)
                 return null;
 
-            return new MaterialApi(material, include: true);
+            return new MaterialApi(material, include);
         }
 
         [HttpPost]
@@ -69,7 +69,7 @@ namespace Phoenix.Api.Controllers
             }
 
             var material = await _materialRepository.CreateAsync((Material)(IMaterial)materialApi);
-            return new MaterialApi(material, include: true);
+            return new MaterialApi(material, include: false);
         }
 
         [HttpPut("{id}")]
@@ -88,7 +88,7 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             var material = await _materialRepository.UpdateAsync((Material)(IMaterial)materialApi);
-            return new MaterialApi(material, include: true);
+            return new MaterialApi(material, include: false);
         }
 
         [HttpDelete("{id}")]

@@ -45,7 +45,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<CourseApi>? Get()
+        public IEnumerable<CourseApi>? Get(bool include = false)
         {
             _logger.LogInformation("Api -> Course -> Get");
 
@@ -54,11 +54,11 @@ namespace Phoenix.Api.Controllers
 
             // TODO: Check if lazy properties are loaded
             return this.PhoenixUser?.Courses
-                .Select(c => new CourseApi(c, include: true));
+                .Select(c => new CourseApi(c, include));
         }
 
         [HttpGet("{id}")]
-        public async Task<CourseApi?> GetAsync(int id)
+        public async Task<CourseApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Course -> Get {id}", id);
 
@@ -66,25 +66,25 @@ namespace Phoenix.Api.Controllers
             if (course is null)
                 return null;
 
-            return new CourseApi(course, include: true);
+            return new CourseApi(course, include);
         }
 
         [HttpGet("{id}/Lectures")]
-        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id)
+        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Lectures", id);
 
             var course = await this.FindAsync(id);
-            return course?.Lectures.Select(l => new LectureApi(l, include: true));
+            return course?.Lectures.Select(l => new LectureApi(l, include));
         }
 
         [HttpGet("{id}/Schedules")]
-        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id)
+        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedules", id);
 
             var course = await this.FindAsync(id);
-            return course?.Schedules.Select(s => new ScheduleApi(s, include: true));
+            return course?.Schedules.Select(s => new ScheduleApi(s, include));
         }
 
         [HttpGet("{id}/Books")]

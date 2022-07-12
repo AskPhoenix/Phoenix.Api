@@ -36,7 +36,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("me")]
-        public async Task<UserApi?> MeAsync()
+        public async Task<UserApi?> MeAsync(bool include = false)
         {
             _logger.LogInformation("Api -> Account -> Me");
 
@@ -45,7 +45,7 @@ namespace Phoenix.Api.Controllers
 
             User user = (await _userRepository.FindPrimaryAsync(AppUser!.Id))!;
 
-            return new UserApi(user, include: true);
+            return new UserApi(user, include);
         }
 
         [HttpPost("change-password")]

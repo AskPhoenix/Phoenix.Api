@@ -23,7 +23,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<ScheduleApi>? Get()
+        public IEnumerable<ScheduleApi>? Get(bool include = false)
         {
             _logger.LogInformation("Api -> Schedule -> Get");
 
@@ -31,11 +31,11 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             return this.PhoenixUser?.Courses
-                .SelectMany(c => c.Schedules.Select(s => new ScheduleApi(s, include: true)));
+                .SelectMany(c => c.Schedules.Select(s => new ScheduleApi(s, include)));
         }
 
         [HttpGet("{id}")]
-        public async Task<ScheduleApi?> GetAsync(int id)
+        public async Task<ScheduleApi?> GetAsync(int id, bool include = false)
         {
             _logger.LogInformation("Api -> Schedule -> Get {id}", id);
 
@@ -53,7 +53,7 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            return new ScheduleApi(schedule, include: true);
+            return new ScheduleApi(schedule, include);
         }
     }
 }
