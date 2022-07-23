@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
@@ -46,7 +45,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<MaterialApi?> GetAsync(int id, bool include = false)
+        public async Task<MaterialApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Material -> Get {id}", id);
 
@@ -54,7 +53,7 @@ namespace Phoenix.Api.Controllers
             if (material is null)
                 return null;
 
-            return new MaterialApi(material, include);
+            return new MaterialApi(material);
         }
 
         [HttpPost]
@@ -68,8 +67,8 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var material = await _materialRepository.CreateAsync((Material)(IMaterial)materialApi);
-            return new MaterialApi(material, include: false);
+            var material = await _materialRepository.CreateAsync(materialApi.ToMaterial());
+            return new MaterialApi(material);
         }
 
         [HttpPut("{id}")]
@@ -83,12 +82,12 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var oldMaterial = await this.FindAsync(id);
-            if (oldMaterial is null)
+            var material = await this.FindAsync(id);
+            if (material is null)
                 return null;
 
-            var material = await _materialRepository.UpdateAsync((Material)(IMaterial)materialApi);
-            return new MaterialApi(material, include: false);
+            material = await _materialRepository.UpdateAsync(materialApi.ToMaterial(material));
+            return new MaterialApi(material);
         }
 
         [HttpDelete("{id}")]

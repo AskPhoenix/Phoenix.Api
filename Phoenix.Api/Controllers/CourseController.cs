@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -45,20 +45,20 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<CourseApi>? Get(bool include = false)
+        public IEnumerable<CourseApi>? Get()
         {
             _logger.LogInformation("Api -> Course -> Get");
 
             if (!this.CheckUserAuth())
                 return null;
 
-            // TODO: Check if lazy properties are loaded
-            return this.PhoenixUser?.Courses
-                .Select(c => new CourseApi(c, include));
+            return this.PhoenixUser?
+                .Courses
+                .Select(c => new CourseApi(c));
         }
 
         [HttpGet("{id}")]
-        public async Task<CourseApi?> GetAsync(int id, bool include = false)
+        public async Task<CourseApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get {id}", id);
 
@@ -66,25 +66,27 @@ namespace Phoenix.Api.Controllers
             if (course is null)
                 return null;
 
-            return new CourseApi(course, include);
+            return new CourseApi(course);
         }
 
         [HttpGet("{id}/Lectures")]
-        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id, bool include = false)
+        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Lectures", id);
 
             var course = await this.FindAsync(id);
-            return course?.Lectures.Select(l => new LectureApi(l, include));
+            return course?.Lectures
+                .Select(l => new LectureApi(l));
         }
 
         [HttpGet("{id}/Schedules")]
-        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id, bool include = false)
+        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id)
         {
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedules", id);
 
             var course = await this.FindAsync(id);
-            return course?.Schedules.Select(s => new ScheduleApi(s, include));
+            return course?.Schedules
+                .Select(s => new ScheduleApi(s));
         }
 
         [HttpGet("{id}/Books")]
@@ -93,7 +95,8 @@ namespace Phoenix.Api.Controllers
             _logger.LogInformation("Api -> Course -> Get -> {id} -> Books", id);
 
             var course = await this.FindAsync(id);
-            return course?.Books.Select(b => new BookApi(b));
+            return course?.Books
+                .Select(b => new BookApi(b));
         }
     }
 }

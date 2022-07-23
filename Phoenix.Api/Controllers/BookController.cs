@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -23,7 +23,6 @@ namespace Phoenix.Api.Controllers
             _bookRepository = new(phoenixContext);
         }
 
-        // TODO: Return Action Result with object, instead of the object itself ?
         [HttpGet]
         public IEnumerable<BookApi>? Get()
         {
@@ -32,8 +31,10 @@ namespace Phoenix.Api.Controllers
             if (!this.CheckUserAuth())
                 return null;
 
-            return this.PhoenixUser?.Courses
-                .SelectMany(c => c.Books.Select(b => new BookApi(b)));
+            return this.PhoenixUser?
+                .Courses
+                .SelectMany(c => c.Books)
+                .Select(b => new BookApi(b));
         }
 
         [HttpGet("{id}")]

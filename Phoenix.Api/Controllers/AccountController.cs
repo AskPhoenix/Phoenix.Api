@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Phoenix.Api.Models;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -29,14 +29,10 @@ namespace Phoenix.Api.Controllers
         {
             _otcRepository = new(phoenixContext);
             _smsService = smsService;
-
-            // TODO: Make sure these Includes are not needed
-            //_userRepository.Include(u => u.Courses);
-            //_userRepository.Include(u => u.OneTimeCodes);
         }
 
         [HttpGet("me")]
-        public async Task<UserApi?> MeAsync(bool include = false)
+        public async Task<UserApi?> MeAsync()
         {
             _logger.LogInformation("Api -> Account -> Me");
 
@@ -45,7 +41,7 @@ namespace Phoenix.Api.Controllers
 
             User user = (await _userRepository.FindPrimaryAsync(AppUser!.Id))!;
 
-            return new UserApi(user, include);
+            return new UserApi(user);
         }
 
         [HttpPost("change-password")]
@@ -105,7 +101,8 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("verification/send-otc")]
-        public async Task<IActionResult> SendVerificationOTCAsync(AccountSendVerificationOTC sendVerificationOTCModel)
+        public async Task<IActionResult> SendVerificationOTCAsync(
+            AccountSendVerificationOTC sendVerificationOTCModel)
         {
             _logger.LogInformation("Api -> Account -> Verification -> SendOTC");
 
@@ -133,7 +130,8 @@ namespace Phoenix.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("verification/check-otc")]
-        public async Task<IActionResult> CheckVerificationOTCAsync(AccountCheckVerificationOTC checkVerificationOTCModel)
+        public async Task<IActionResult> CheckVerificationOTCAsync(
+            AccountCheckVerificationOTC checkVerificationOTCModel)
         {
             _logger.LogInformation("Api -> Account -> -> Verification -> CheckOTC");
 

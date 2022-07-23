@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Main.Types;
 using Phoenix.DataHandle.Repositories;
@@ -47,7 +46,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<LectureApi?> GetAsync(int id, bool include = false)
+        public async Task<LectureApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Lecture -> Get {id}", id);
 
@@ -55,7 +54,7 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return new LectureApi(lecture, include);
+            return new LectureApi(lecture);
         }
 
         [HttpGet("{id}/Exercises")]
@@ -67,7 +66,8 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return lecture.Exercises.Select(e => new ExerciseApi(e, include: false));
+            return lecture.Exercises
+                .Select(e => new ExerciseApi(e));
         }
 
         [HttpGet("{id}/Exams")]
@@ -79,11 +79,12 @@ namespace Phoenix.Api.Controllers
             if (lecture is null)
                 return null;
 
-            return lecture.Exams.Select(e => new ExamApi(e, include: false));
+            return lecture.Exams
+                .Select(e => new ExamApi(e));
         }
 
         [HttpGet("{id}/Students")]
-        public async Task<IEnumerable<UserApi>?> GetStudentsAsync(int id, bool include = false)
+        public async Task<IEnumerable<UserApi>?> GetStudentsAsync(int id)
         {
             _logger.LogInformation("Api -> Lecture -> Get -> {id} -> Students", id);
 
@@ -100,7 +101,7 @@ namespace Phoenix.Api.Controllers
                     users.Remove(user);
             }
 
-            return users.Select(u => new UserApi(u, include));
+            return users.Select(u => new UserApi(u));
         }
 
         [HttpPost]
@@ -114,8 +115,27 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var lecture = await _lectureRepository.CreateAsync((Lecture)(ILecture)lectureApi);
-            return new LectureApi(lecture, include: false);
+            var lecture = await _lectureRepository.CreateAsync(lectureApi.ToLecture());
+            return new LectureApi(lecture);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<LectureApi?> PutAsync(int id, [FromBody] LectureApi lectureApi)
+        {
+            _logger.LogInformation("Api -> Lecture -> Put -> {id}", id);
+
+            if (lectureApi is null)
+            {
+                _logger.LogError("Argument {arg} cannot be null.", nameof(lectureApi));
+                return null;
+            }
+
+            var lecture = await this.FindAsync(id);
+            if (lecture is null)
+                return null;
+
+            lecture = await _lectureRepository.UpdateAsync(lectureApi.ToLecture(lecture));
+            return new LectureApi(lecture);
         }
     }
 }

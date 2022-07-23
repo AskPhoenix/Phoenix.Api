@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
@@ -49,7 +48,7 @@ namespace Phoenix.Api.Controllers
         // TODO: Grades?
 
         [HttpGet("{id}")]
-        public async Task<ExamApi?> GetAsync(int id, bool include = false)
+        public async Task<ExamApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Exam -> Get -> {id}", id);
 
@@ -57,12 +56,9 @@ namespace Phoenix.Api.Controllers
             if (exam is null)
                 return null;
 
-            return new ExamApi(exam, include);
+            return new ExamApi(exam);
         }
 
-        // TODO: Check if lectures are created for the exam.
-        // TODO: Check if the list properties are affected. E.g. add material
-        // If not, a method that converts a ModelApi to ModelEntity will be needed inside each ModelApi
         [HttpPost]
         public async Task<ExamApi?> PostAsync([FromBody] ExamApi examApi)
         {
@@ -74,8 +70,8 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var exam = await _examRepository.CreateAsync((Exam)(IExam)examApi);
-            return new ExamApi(exam, include: false);
+            var exam = await _examRepository.CreateAsync(examApi.ToExam());
+            return new ExamApi(exam);
         }
 
         [HttpPut("{id}")]
@@ -89,12 +85,12 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var oldExam = await this.FindAsync(id);
-            if (oldExam is null)
+            var exam = await this.FindAsync(id);
+            if (exam is null)
                 return null;
 
-            var exam = await _examRepository.UpdateAsync((Exam)(IExam)examApi);
-            return new ExamApi(exam, include: false);
+            exam = await _examRepository.UpdateAsync(examApi.ToExam(exam));
+            return new ExamApi(exam);
         }
 
         [HttpDelete("{id}")]

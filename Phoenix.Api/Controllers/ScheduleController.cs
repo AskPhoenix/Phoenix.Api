@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
@@ -23,7 +23,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<ScheduleApi>? Get(bool include = false)
+        public IEnumerable<ScheduleApi>? Get()
         {
             _logger.LogInformation("Api -> Schedule -> Get");
 
@@ -31,11 +31,12 @@ namespace Phoenix.Api.Controllers
                 return null;
 
             return this.PhoenixUser?.Courses
-                .SelectMany(c => c.Schedules.Select(s => new ScheduleApi(s, include)));
+                .SelectMany(c => c.Schedules)
+                .Select(s => new ScheduleApi(s));
         }
 
         [HttpGet("{id}")]
-        public async Task<ScheduleApi?> GetAsync(int id, bool include = false)
+        public async Task<ScheduleApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Schedule -> Get {id}", id);
 
@@ -53,7 +54,7 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            return new ScheduleApi(schedule, include);
+            return new ScheduleApi(schedule);
         }
     }
 }

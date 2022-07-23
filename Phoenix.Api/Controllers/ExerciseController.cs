@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Phoenix.DataHandle.Api.Models.Main;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
@@ -46,7 +45,7 @@ namespace Phoenix.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ExerciseApi?> GetAsync(int id, bool include = false)
+        public async Task<ExerciseApi?> GetAsync(int id)
         {
             _logger.LogInformation("Api -> Exercise -> Get -> {id}", id);
 
@@ -54,7 +53,7 @@ namespace Phoenix.Api.Controllers
             if (exercise is null)
                 return null;
 
-            return new ExerciseApi(exercise, include);
+            return new ExerciseApi(exercise);
         }
 
         [HttpPost]
@@ -68,8 +67,8 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var exercise = await _exerciseRepository.CreateAsync((Exercise)(IExercise)exerciseApi);
-            return new ExerciseApi(exercise, include: false);
+            var exercise = await _exerciseRepository.CreateAsync(exerciseApi.ToExercise());
+            return new ExerciseApi(exercise);
         }
 
         [HttpPut("{id}")]
@@ -83,12 +82,12 @@ namespace Phoenix.Api.Controllers
                 return null;
             }
 
-            var oldExercise = await this.FindAsync(id);
-            if (oldExercise is null)
+            var exercise = await this.FindAsync(id);
+            if (exercise is null)
                 return null;
 
-            var exercise = await _exerciseRepository.UpdateAsync((Exercise)(IExercise)exerciseApi);
-            return new ExerciseApi(exercise, include: false);
+            exercise = await _exerciseRepository.UpdateAsync(exerciseApi.ToExercise(exercise));
+            return new ExerciseApi(exercise);
         }
 
         [HttpDelete("{id}")]
