@@ -19,7 +19,7 @@ namespace Phoenix.Api.Controllers
             ILogger<CourseController> logger)
             : base(phoenixContext, userManager, logger)
         {
-            _courseRepository = new(phoenixContext);
+            _courseRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         private async Task<Course?> FindAsync(int id)

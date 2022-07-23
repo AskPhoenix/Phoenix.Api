@@ -20,7 +20,7 @@ namespace Phoenix.Api.Controllers
             ILogger<LectureController> logger)
             : base(phoenixContext, userManager, logger)
         {
-            _lectureRepository = new(phoenixContext);
+            _lectureRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         private async Task<Lecture?> FindAsync(int id)

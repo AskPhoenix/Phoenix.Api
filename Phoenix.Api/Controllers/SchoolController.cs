@@ -19,7 +19,7 @@ namespace Phoenix.Api.Controllers
             ILogger<SchoolController> logger)
             : base(phoenixContext, userManager, logger)
         {
-            _schoolRepository = new(phoenixContext);
+            _schoolRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         private async Task<School?> FindAsync(int id)

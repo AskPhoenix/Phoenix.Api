@@ -19,7 +19,7 @@ namespace Phoenix.Api.Controllers
             ILogger<ScheduleController> logger)
             : base(phoenixContext, userManager, logger)
         {
-            _scheduleRepository = new(phoenixContext);
+            _scheduleRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         [HttpGet]

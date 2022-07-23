@@ -23,7 +23,7 @@ namespace Phoenix.Api.Controllers
         {
             _logger = logger;
             _userManager = userManager;
-            _userRepository = new(phoenixContext);
+            _userRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         protected bool CheckUserAuth()
