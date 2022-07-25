@@ -24,15 +24,7 @@ Action<DbContextOptionsBuilder> buildDbContextOptions = o => o
 builder.Services.AddDbContext<ApplicationContext>(buildDbContextOptions);
 builder.Services.AddDbContext<PhoenixContext>(buildDbContextOptions);
 
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
-    {
-        o.User.AllowedUserNameCharacters = null;
-        o.Password.RequireDigit = false;
-        o.Password.RequireLowercase = false;
-        o.Password.RequireNonAlphanumeric = false;
-        o.Password.RequireUppercase = false;
-        o.Password.RequiredLength = 6;
-    })
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddRoles<ApplicationRole>()
     .AddUserStore<ApplicationStore>()
     .AddUserManager<ApplicationUserManager>()
@@ -44,12 +36,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
             ValidateLifetime = true,
+            ValidateAudience = false,
+            ValidateIssuer = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
