@@ -9,6 +9,8 @@ using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Sms;
 using System.Text;
 
+// TODO: Unify Program class in all APIs
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Web Host Defaults
@@ -59,7 +61,8 @@ builder.Services.AddScoped<ISmsService>(_ =>
     new SmsService(builder.Configuration["NexmoSMS:ApiKey"], builder.Configuration["NexmoSMS:ApiSecret"]));
 builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["ApplicationInsights:ConnectionString"]);
+builder.Services.AddApplicationInsightsTelemetry(
+    o => o.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]);
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
@@ -105,11 +108,11 @@ builder.Services.AddSwaggerGen(o =>
 
 // Configure Logging
 // TODO: Create File Logging & on app insights
-builder.Logging.ClearProviders();
-builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
-builder.Logging.SetMinimumLevel(LogLevel.Trace);
-builder.Logging.AddSimpleConsole();
-builder.Logging.AddDebug();
+builder.Logging.ClearProviders()
+    .AddConfiguration(builder.Configuration.GetSection("Logging"))
+    .SetMinimumLevel(LogLevel.Trace)
+    .AddSimpleConsole()
+    .AddDebug();
 
 
 var app = builder.Build();
