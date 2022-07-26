@@ -50,13 +50,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddScoped<ISmsService>(_ => 
     new SmsService(builder.Configuration["NexmoSMS:ApiKey"], builder.Configuration["NexmoSMS:ApiSecret"]));
-builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
 builder.Services.AddApplicationInsightsTelemetry(
     o => o.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]);
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
+builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
 // TODO: Write detailed documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -128,8 +128,6 @@ app.UseHttpsRedirection();
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
 app.UseRouting();
-
-app.UseAuthentication();
 
 // TODO: What is this?
 //app.Use(async (context, next) =>
