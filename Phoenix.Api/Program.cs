@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Phoenix.DataHandle.Api;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Sms;
@@ -93,8 +92,6 @@ builder.Services.AddSwaggerGen(o =>
     {
         { jwtSecurityScheme, Array.Empty<string>() }
     });
-
-    o.SchemaFilter<SwaggerExcludeFilter>();
 });
 
 // Configure Logging
