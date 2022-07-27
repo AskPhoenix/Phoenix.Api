@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <_WebToolingArtifacts Remove="Properties\PublishProfiles\Egretta.Production.pubxml" />
-    <_WebToolingArtifacts Remove="Properties\PublishProfiles\Egretta.pubxml" />
+    <_WebToolingArtifacts Remove="Properties\PublishProfiles\Egretta.Staging.pubxml" />
   </ItemGroup>
 
   <ItemGroup>
