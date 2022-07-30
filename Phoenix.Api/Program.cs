@@ -55,7 +55,8 @@ builder.Services.AddApplicationInsightsTelemetry(
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
-builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
+builder.Services.AddHttpsRedirection(o => o.HttpsPort = 443);
+builder.Services.AddRouting(o => o.LowercaseUrls = true);
 
 // TODO: Write detailed documentation
 builder.Services.AddEndpointsApiExplorer();
