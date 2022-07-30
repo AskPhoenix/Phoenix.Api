@@ -60,6 +60,19 @@ namespace Phoenix.Api.Controllers
             return new ExamApi(exam);
         }
 
+        [HttpGet("{id}/materials")]
+        public async Task<IEnumerable<MaterialApi>?> GetMaterialsAsync(int id)
+        {
+            _logger.LogInformation("Api -> Exam -> Get -> {id} -> Materials", id);
+
+            var exam = await this.FindAsync(id);
+            if (exam is null)
+                return null;
+
+            return exam?.Materials
+                .Select(m => new MaterialApi(m));
+        }
+
         [HttpPost]
         public async Task<ExamApi?> PostAsync([FromBody] ExamApi examApi)
         {
