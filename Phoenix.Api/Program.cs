@@ -60,6 +60,7 @@ builder.Services.AddRouting(o => o.LowercaseUrls = true);
 
 // TODO: Write detailed documentation
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGenNewtonsoftSupport();
 builder.Services.AddSwaggerGen(o =>
 {
     o.EnableAnnotations();
@@ -87,6 +88,7 @@ builder.Services.AddSwaggerGen(o =>
             Type = ReferenceType.SecurityScheme
         }
     };
+
     o.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
 
     o.AddSecurityRequirement(new OpenApiSecurityRequirement
