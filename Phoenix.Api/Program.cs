@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
-using Phoenix.DataHandle.Sms;
+using Phoenix.DataHandle.Senders;
 using System.Text;
 
 // TODO: Unify Program class in all APIs
@@ -47,8 +47,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // TODO: Make sure this is not needed
 // builder.Services.AddCors();
 
-builder.Services.AddScoped<ISmsService>(_ => 
-    new SmsService(builder.Configuration["NexmoSMS:ApiKey"], builder.Configuration["NexmoSMS:ApiSecret"]));
+builder.Services.AddScoped(_ =>
+    new SmsSender(builder.Configuration["Vonage:Key"], builder.Configuration["Vonage:Secret"]));
+
 
 builder.Services.AddApplicationInsightsTelemetry(
     o => o.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]);

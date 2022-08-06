@@ -7,7 +7,7 @@ using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
-using Phoenix.DataHandle.Sms;
+using Phoenix.DataHandle.Senders;
 
 namespace Phoenix.Api.Controllers
 {
@@ -19,17 +19,17 @@ namespace Phoenix.Api.Controllers
         private readonly static TimeSpan pinCodeExpiration = new(0, 10, 0);
 
         private readonly OneTimeCodeRepository _otcRepository;
-        private readonly ISmsService _smsService;
+        private readonly SmsSender _smsSender;
 
         public AccountController(
-            ISmsService smsService,
+            SmsSender smsSender,
             PhoenixContext phoenixContext,
             ApplicationUserManager userManager,
             ILogger<AccountController> logger)
             : base(phoenixContext, userManager, logger)
         {
             _otcRepository = new(phoenixContext);
-            _smsService = smsService;
+            _smsSender = smsSender;
         }
 
         [HttpGet("me")]
@@ -123,7 +123,8 @@ namespace Phoenix.Api.Controllers
             };
             otc = await _otcRepository.CreateAsync(otc);
 
-            _smsService.Send(sendVerificationOTCModel.PhoneNumber, "Χρησιμοποιήστε το παρακάτω pin για την επαλήθευσή σας" +
+            await _smsSender.SendAsync(sendVerificationOTCModel.PhoneNumber,
+                "Χρησιμοποιήστε το παρακάτω pin για την επαλήθευσή σας" +
                 $" στο εργαλείο καθηγητών εντός 10 λεπτών: {otc.Token}");
 
             return Ok();
