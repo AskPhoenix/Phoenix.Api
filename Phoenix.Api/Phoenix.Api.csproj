@@ -2,16 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>2035c024-0e69-4bb3-8611-a798fd0b440a</UserSecretsId>
-    <ApplicationInsightsResourceId>/subscriptions/21af8426-0b31-4244-9a9f-50c08ee90ee4/resourceGroups/PhoenicopterusRsrcG/providers/microsoft.insights/components/egretta</ApplicationInsightsResourceId>
-    <Version>3.0.0-beta.0</Version>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<Version>3.0.0</Version>
     <Authors>AskPhoenix</Authors>
+	<Company>AskPhoenix</Company>
     <Description>An API to wrap AskPhoenix backend operations</Description>
     <Copyright>AskPhoenix 2022</Copyright>
-    <RepositoryUrl>https://github.com/AskPhoenix/Phoenix.Api</RepositoryUrl>
     <PackageProjectUrl>https://www.askphoenix.gr</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/AskPhoenix/Phoenix.Api</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +25,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="6.0.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.*" />
-    <PackageReference Include="Phoenix.DataHandle" Version="3.0.0-beta1.*" />
+    <PackageReference Include="Phoenix.DataHandle" Version="3.0.*" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.4.*" />
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.4.*" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.4.*" />
