@@ -1,59 +1,149 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Talagozis.Logging;
-using Talagozis.Logging.ColoredConsole;
-using Talagozis.Logging.File;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Phoenix.DataHandle.Identity;
+using Phoenix.DataHandle.Main.Models;
+using Phoenix.DataHandle.Senders;
+using System.Text;
+using static Phoenix.DataHandle.Api.DocumentationHelper;
 
-namespace Phoenix.Api
-{
-    public static class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure Web Host Defaults
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
+// Add services to the container.
+Action<DbContextOptionsBuilder> buildDbContextOptions = o => o
+    .UseLazyLoadingProxies()
+    .UseSqlServer(builder.Configuration.GetConnectionString("PhoenixConnection"));
+
+builder.Services.AddDbContext<ApplicationContext>(buildDbContextOptions);
+builder.Services.AddDbContext<PhoenixContext>(buildDbContextOptions);
+
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
+    .AddRoles<ApplicationRole>()
+    .AddUserStore<ApplicationStore>()
+    .AddUserManager<ApplicationUserManager>()
+    .AddEntityFrameworkStores<ApplicationContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options => 
     {
-        public static void Main(string[] args)
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            ValidateLifetime = true,
+            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                    webBuilder.ConfigureKestrel((context, options) => options.AddServerHeader = false);
-                })
-                .ConfigureServices(serviceCollection => { serviceCollection.AddLoggerBackgroundService(); })
-                .ConfigureLogging((hostBuilderContext, loggingBuilder) =>
-                {
-                    loggingBuilder.ClearProviders();
-                    loggingBuilder.AddConfiguration(hostBuilderContext.Configuration.GetSection("Logging"));
-                    loggingBuilder.SetMinimumLevel(LogLevel.Trace);
+// TODO: Make sure this is not needed
+// builder.Services.AddCors();
 
-                    loggingBuilder.AddFile(a =>
-                    {
-                        a.folderPath = Path.Combine(Directory.GetCurrentDirectory(), "../logs/api/");
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Debug
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Warning
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Error
-                        });
-                        a.Add(new FileLoggerConfiguration
-                        {
-                            logLevel = LogLevel.Critical
-                        });
-                    });
-                    loggingBuilder.AddColoredConsole(hostBuilderContext.Configuration.GetSection("Logging:ColoredConsole"));
+builder.Services.AddScoped(_ =>
+    new SmsSender(builder.Configuration["Vonage:Key"], builder.Configuration["Vonage:Secret"]));
 
-                });
-    }
+
+builder.Services.AddApplicationInsightsTelemetry(
+    o => o.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]);
+
+builder.Services.AddControllers()
+    .AddNewtonsoftJson();
+builder.Services.AddHttpsRedirection(o => o.HttpsPort = 443);
+builder.Services.AddRouting(o => o.LowercaseUrls = true);
+
+// TODO: Write detailed documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGenNewtonsoftSupport();
+builder.Services.AddSwaggerGen(o =>
+{
+    o.EnableAnnotations();
+
+    // SwaggerDoc name refers to the name of the documention and is included in the endpoint path
+    o.SwaggerDoc("v3", new OpenApiInfo()
+    {
+        Title = "Egretta API",
+        Description = "A Rest API to handle Phoenix backend data.",
+        Version = "3.0"
+    });
+
+    o.AddSecurityDefinition(JWTSecurityScheme.Reference.Id, JWTSecurityScheme);
+
+    o.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { JWTSecurityScheme, Array.Empty<string>() }
+    });
+});
+
+// Configure Logging
+// TODO: Create File Logging & on app insights
+builder.Logging.ClearProviders()
+    .AddConfiguration(builder.Configuration.GetSection("Logging"))
+    .SetMinimumLevel(LogLevel.Trace)
+    .AddSimpleConsole()
+    .AddDebug();
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    // app.UseDatabaseErrorPage();
 }
+else
+{
+    app.UseHsts();
+}
+
+// TODO: Hide Swagger documentation
+app.UseSwagger(o => o.RouteTemplate = "/doc/{documentname}/swagger.json");
+app.UseSwaggerUI(o =>
+{
+    o.SwaggerEndpoint("/doc/v3/swagger.json", "Egretta v3");
+    o.RoutePrefix = "doc";
+});
+
+app.UseHttpsRedirection();
+
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+
+app.UseRouting();
+
+// TODO: What is this?
+//app.Use(async (context, next) =>
+//{
+//    if (context is null)
+//        throw new ArgumentNullException(nameof(context));
+
+//    var logger = context.RequestServices.GetService<ILogger>();
+//    if (logger is null)
+//        return;
+
+//    var claimsPrincipal = context?.User;
+//    if (claimsPrincipal is null)
+//    {
+//        logger.LogTrace("No authorized user is set");
+//        return;
+//    }
+
+//    logger.LogTrace("{NameIdentifier}: {NameIdentifierValue}", nameof(ClaimTypes.NameIdentifier),
+//        claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+//    logger.LogTrace("{Role}s: {RoleValue}", nameof(ClaimTypes.Role),
+//        string.Join(", ", claimsPrincipal.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value)));
+
+//    await next(context!);
+//});
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

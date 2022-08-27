@@ -1,136 +1,96 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.Models.Api;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
-    public class SchoolController : BaseController
+    public class SchoolController : ApplicationController
     {
-        private readonly ILogger<SchoolController> _logger;
         private readonly SchoolRepository _schoolRepository;
 
-        public SchoolController(PhoenixContext phoenixContext, ILogger<SchoolController> logger) : base(phoenixContext, logger)
+        public SchoolController(
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<SchoolController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._schoolRepository = new SchoolRepository(phoenixContext);
+            _schoolRepository = new(phoenixContext, nonObviatedOnly: true);
+        }
+
+        private async Task<School?> FindAsync(int id)
+        {
+            if (!this.CheckUserAuth())
+                return null;
+
+            var school = await _schoolRepository.FindPrimaryAsync(id);
+            if (school is null)
+            {
+                _logger.LogError("No school found with id {id}", id);
+                return null;
+            }
+
+            if (!school.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
+            {
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access school with id {id}", id);
+                return null;
+            }
+
+            return school;
         }
 
         [HttpGet]
-        public async Task<IEnumerable<SchoolApi>> Get()
+        public IEnumerable<SchoolApi>? Get()
         {
-            this._logger.LogInformation("Api -> School -> Get");
+            _logger.LogInformation("Api -> School -> Get");
 
-            IQueryable<School> schools = this._schoolRepository.Find();
-            schools = schools.Where(a => a.Course.Any(b => b.TeacherCourse.Any(c => c.TeacherId == this.userId)));
+            if (!this.CheckUserAuth())
+                return null;
 
-            return await schools.Select(school => new SchoolApi
-            {
-                id = school.Id,
-                Name = school.Name,
-                Slug = school.Slug,
-                AddressLine = school.AddressLine,
-                City = school.City,
-                FacebookPageId = school.FacebookPageId,
-                Info = school.Info,
-            }).ToListAsync();
+            return this.PhoenixUser?.Schools
+                .Select(s => new SchoolApi(s));
         }
 
         [HttpGet("{id}")]
-        public async Task<SchoolApi> Get(int id)
+        public async Task<SchoolApi?> GetAsync(int id)
         {
-            this._logger.LogInformation($"Api -> School -> Get{id}");
+            _logger.LogInformation("Api -> School -> Get {id}", id);
 
-            School school = await this._schoolRepository.Find(id);
+            var school = await this.FindAsync(id);
+            if (school is null)
+                return null;
 
-            return new SchoolApi
-            {
-                id = school.Id,
-                Name = school.Name,
-                Slug = school.Slug,
-                AddressLine = school.AddressLine,
-                City = school.City,
-                FacebookPageId = school.FacebookPageId,
-                Info = school.Info,
-            };
+            return new SchoolApi(school);
         }
 
-        [HttpPost]
-        public Task<SchoolApi> Post([FromBody] SchoolApi schoolApi)
+        [HttpGet("{id}/Classrooms")]
+        public async Task<IEnumerable<ClassroomApi>?> GetClassroomsAsync(int id)
         {
-            this._logger.LogInformation("Api -> School -> Post");
+            _logger.LogInformation("Api -> School -> {id} -> Classrooms", id);
 
-            if (schoolApi == null)
-                throw new ArgumentNullException(nameof(schoolApi));
+            var school = await this.FindAsync(id);
+            if (school is null)
+                return null;
 
-            return Task.FromResult(schoolApi);
+            return school.Classrooms.Select(c => new ClassroomApi(c));
         }
 
-        [HttpPut("{id}")]
-        public Task<SchoolApi> Put(int id, [FromBody] SchoolApi schoolApi)
+        [HttpGet("{id}/Courses")]
+        public async Task<IEnumerable<CourseApi>?> GetCoursesAsync(int id)
         {
-            this._logger.LogInformation($"Api -> School -> Put -> {id}");
+            _logger.LogInformation("Api -> School -> {id} -> Courses", id);
+            
+            var school = await this.FindAsync(id);
+            if (school is null)
+                return null;
 
-            if (id == default)
-                throw new ArgumentNullException(nameof(id));
-
-            if (schoolApi == null)
-                throw new ArgumentNullException(nameof(schoolApi));
-
-            return Task.FromResult(schoolApi);
+            return school.Courses.Select(c => new CourseApi(c));
         }
-
-        [HttpDelete("{id}")]
-        public void Delete(int id) 
-        { 
-            this._logger.LogInformation($"Api -> School -> Get{id}");
-        }
-
-
-        [HttpGet("{id}/Classroom")]
-        public async Task<IEnumerable<ClassroomApi>> GetClassrooms(int id)
-        {
-            this._logger.LogInformation($"Api -> School -> {id} -> Classrooms");
-
-            IQueryable<Classroom> classrooms = this._schoolRepository.FindClassrooms(id);
-
-            return await classrooms.Select(classroom => new ClassroomApi
-            {
-                id = classroom.Id,
-                Name = classroom.Name,
-                Info = classroom.Info,
-            }).ToListAsync();
-        }
-
-        [HttpGet("{id}/Course")]
-        public async Task<IEnumerable<CourseApi>> GetCourses(int id)
-        {
-            this._logger.LogInformation($"Api -> School -> {id} -> Courses");
-
-            IQueryable<Course> courses = this._schoolRepository.FindCourses(id);
-
-            return await courses.Select(course => new CourseApi
-            {
-                id = course.Id,
-                Name = course.Name,
-                Group = course.Group,
-                SubCourse = course.SubCourse,
-                Level = course.Level,
-                Info = course.Info,
-                FirstDate = course.FirstDate,
-                LastDate = course.LastDate,
-            }).ToListAsync();
-        }
-
-
     }
 }

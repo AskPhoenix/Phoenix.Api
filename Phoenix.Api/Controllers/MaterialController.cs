@@ -1,157 +1,106 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.Models.Api;
-using Phoenix.DataHandle.Main.Entities;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
-    public class MaterialController : BaseController
+    public class MaterialController : ApplicationController
     {
-        private readonly ILogger<MaterialController> _logger;
-        private readonly Repository<Material> _materialRepository;
+        private readonly MaterialRepository _materialRepository;
 
-        public MaterialController(PhoenixContext phoenixContext, ILogger<MaterialController> logger) : base(phoenixContext, logger)
+        public MaterialController(
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<BookController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._materialRepository = new Repository<Material>(phoenixContext);
+            _materialRepository = new(phoenixContext);
+        }
+
+        private async Task<Material?> FindAsync(int id)
+        {
+            if (!this.CheckUserAuth())
+                return null;
+
+            var material = await _materialRepository.FindPrimaryAsync(id);
+            if (material is null)
+            {
+                _logger.LogError("No material found with id {id}", id);
+                return null;
+            }
+
+            if (!material.Exam.Lecture.Course.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
+            {
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access material with id {id}", id);
+                return null;
+            }
+
+            return material;
         }
 
         [HttpGet("{id}")]
-        public async Task<IMaterial> Get(int id)
+        public async Task<MaterialApi?> GetAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Material -> Get{id}");
+            _logger.LogInformation("Api -> Material -> Get {id}", id);
 
-            Material material = await this._materialRepository.Find(id);
+            var material = await this.FindAsync(id);
+            if (material is null)
+                return null;
 
-            return new MaterialApi
-            {
-                id = material.Id,
-                Chapter = material.Chapter,
-                Section = material.Section,
-                Comments = material.Comments,
-                Book = material.Book != null ? new BookApi
-                {
-                    id = material.Book.Id,
-                    Name = material.Book.Name,
-                    Publisher = material.Book.Publisher,
-                    Info = material.Book.Info
-                } : null,
-                Exam = material.Exam != null ? new ExamApi
-                {
-                    id = material.Exam.Id,
-                    Name = material.Exam.Name,
-                    Comments = material.Exam.Comments
-                } : null,
-            };
+            return new MaterialApi(material);
         }
 
         [HttpPost]
-        public async Task<MaterialApi> Post([FromBody] MaterialApi materialApi)
+        public async Task<MaterialApi?> PostAsync([FromBody] MaterialApi materialApi)
         {
-            this._logger.LogInformation("Api -> Material -> Post");
+            _logger.LogInformation("Api -> Material -> Post");
 
-            if (materialApi == null)
-                throw new ArgumentNullException(nameof(materialApi));
-
-            Material material = new Material
+            if (materialApi is null)
             {
-                Id = materialApi.id,
-                Chapter = materialApi.Chapter,
-                Section = materialApi.Section,
-                Comments = materialApi.Comments,
-                BookId = materialApi.Book?.id,
-                ExamId = materialApi.Exam.id
-            };
+                _logger.LogError("Argument {arg} cannot be null.", nameof(materialApi));
+                return null;
+            }
 
-            material = this._materialRepository.Create(material);
-
-            material = await this._materialRepository.Find(material.Id);
-
-            return new MaterialApi
-            {
-                id = material.Id,
-                Chapter = material.Chapter,
-                Section = material.Section,
-                Comments = material.Comments,
-                Book = material.Book != null ? new BookApi
-                {
-                    id = material.Book.Id,
-                    Name = material.Book.Name,
-                    Publisher = material.Book.Publisher,
-                    Info = material.Book.Info
-                } : null,
-                Exam = material.Exam != null ? new ExamApi
-                {
-                    id = material.Exam.Id,
-                    Name = material.Exam.Name,
-                    Comments = material.Exam.Comments
-                } : null,
-            };
+            var material = await _materialRepository.CreateAsync(materialApi.ToMaterial());
+            return new MaterialApi(material);
         }
 
         [HttpPut("{id}")]
-        public async Task<MaterialApi> Put(int id, [FromBody] MaterialApi materialApi)
+        public async Task<MaterialApi?> PutAsync(int id, [FromBody] MaterialApi materialApi)
         {
-            this._logger.LogInformation($"Api -> Material -> Put -> {id}");
+            _logger.LogInformation("Api -> Material -> Put -> {id}", id);
 
-            if (id == default)
-                throw new ArgumentNullException(nameof(id));
-
-            if (materialApi == null)
-                throw new ArgumentNullException(nameof(materialApi));
-
-            Material material = new Material
+            if (materialApi is null)
             {
-                Id = materialApi.id,
-                Chapter = materialApi.Chapter,
-                Section = materialApi.Section,
-                Comments = materialApi.Comments,
-                BookId = materialApi.Book?.id,
-                ExamId = materialApi.Exam.id
-            };
+                _logger.LogError("Argument {arg} cannot be null.", nameof(materialApi));
+                return null;
+            }
 
-            material = this._materialRepository.Update(material);
+            var material = await this.FindAsync(id);
+            if (material is null)
+                return null;
 
-            material = await this._materialRepository.Find(material.Id);
-
-            return new MaterialApi
-            {
-                id = material.Id,
-                Chapter = material.Chapter,
-                Section = material.Section,
-                Comments = material.Comments,
-                Book = material.Book != null ? new BookApi
-                {
-                    id = material.Book.Id,
-                    Name = material.Book.Name,
-                    Publisher = material.Book.Publisher,
-                    Info = material.Book.Info
-                } : null,
-                Exam = material.Exam != null ? new ExamApi
-                {
-                    id = material.Exam.Id,
-                    Name = material.Exam.Name,
-                    Comments = material.Exam.Comments
-                } : null,
-            };
+            material = await _materialRepository.UpdateAsync(materialApi.ToMaterial(material));
+            return new MaterialApi(material);
         }
 
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Material -> Get -> {id}");
+            _logger.LogInformation("Api -> Material -> Get -> {id}", id);
 
-            this._materialRepository.Delete(id);
+            var material = await this.FindAsync(id);
+            if (material is null)
+                return;
+
+            await _materialRepository.DeleteAsync(id);
         }
-
     }
 }

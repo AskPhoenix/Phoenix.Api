@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using Newtonsoft.Json;
 
 namespace Phoenix.Api.Models
 {
@@ -10,14 +7,14 @@ namespace Phoenix.Api.Models
     {
         [Required]
         [JsonProperty("id")]
-        public int id { get; set; }
+        public int Id { get; set; }
 
         [Required]
         [JsonProperty("token")]
-        public string token { get; set; }
+        public string Token { get; set; } = null!;
 
         [Required]
-        [JsonProperty("newPassword")]
-        public string newPassword { get; set; }
+        [JsonProperty("new_password")]
+        public string NewPassword { get; set; } = null!;
     }
 }

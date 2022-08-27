@@ -1,60 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.Models.Api;
-using Phoenix.DataHandle.Main.Entities;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [ApiController]
     [Route("api/[controller]")]
-    public class BookController : BaseController
+    public class BookController : ApplicationController
     {
-        private readonly ILogger<BookController> _logger;
-        private readonly Repository<Book> _bookRepository;
+        private readonly BookRepository _bookRepository;
 
-        public BookController(PhoenixContext phoenixContext, ILogger<BookController> logger) : base(phoenixContext, logger)
+        public BookController(
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<BookController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._bookRepository = new Repository<Book>(phoenixContext);
+            _bookRepository = new(phoenixContext);
         }
 
         [HttpGet]
-        public async Task<IEnumerable<IBook>> Get()
+        public IEnumerable<BookApi>? Get()
         {
-            this._logger.LogInformation("Api -> Book -> Get");
+            _logger.LogInformation("Api -> Book -> Get");
 
-            IQueryable<Book> books = this._bookRepository.Find();
+            if (!this.CheckUserAuth())
+                return null;
 
-            return await books.Select(book => new BookApi
-            {
-                id = book.Id,
-                Name = book.Name,
-                Publisher = book.Publisher,
-                Info = book.Info
-            }).ToListAsync();
+            return this.PhoenixUser?
+                .Courses
+                .SelectMany(c => c.Books)
+                .Select(b => new BookApi(b));
         }
 
         [HttpGet("{id}")]
-        public async Task<IBook> Get(int id)
+        public async Task<BookApi?> GetAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Book -> Get{id}");
+            _logger.LogInformation("Api -> Book -> Get {id}", id);
 
-            Book book = await this._bookRepository.Find(id);
+            if (!this.CheckUserAuth())
+                return null;
 
-            return new BookApi
+            var book = await _bookRepository.FindPrimaryAsync(id);
+            if (book is null)
+                return null;
+
+            if (!book.Courses.Any(c => c.Users.Any(u => u.AspNetUserId == this.AppUser!.Id)))
             {
-                id = book.Id,
-                Name = book.Name,
-                Publisher = book.Publisher,
-                Info = book.Info
-            };
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access book with id {id}", id);
+                return null;
+            }
+            
+            return new BookApi(book);
         }
-
     }
 }

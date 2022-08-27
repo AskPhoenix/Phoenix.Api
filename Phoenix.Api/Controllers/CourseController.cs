@@ -1,166 +1,103 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.Models.Api;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
-    public class CourseController : BaseController
+    public class CourseController : ApplicationController
     {
-        private readonly ILogger<CourseController> _logger;
-        private readonly Repository<Course> _courseRepository;
-        private readonly LectureRepository _lectureRepository;
-        private readonly Repository<Schedule> _scheduleRepository;
-        private readonly Repository<Book> _bookRepository;
+        private readonly CourseRepository _courseRepository;
 
-        public CourseController(PhoenixContext phoenixContext, ILogger<CourseController> logger) : base(phoenixContext, logger)
+        public CourseController(
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<CourseController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._courseRepository = new Repository<Course>(phoenixContext);
-            this._lectureRepository = new LectureRepository(phoenixContext);
-            this._scheduleRepository = new Repository<Schedule>(phoenixContext);
-            this._bookRepository = new Repository<Book>(phoenixContext);
+            _courseRepository = new(phoenixContext, nonObviatedOnly: true);
+        }
+
+        private async Task<Course?> FindAsync(int id)
+        {
+            if (!this.CheckUserAuth())
+                return null;
+
+            var course = await _courseRepository.FindPrimaryAsync(id);
+            if (course is null)
+            {
+                _logger.LogError("No course found with id {id}", id);
+                return null;
+            }
+
+            if (!course.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
+            {
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access course with id {id}", id);
+                return null;
+            }
+
+            return course;
         }
 
         [HttpGet]
-        public async Task<IEnumerable<CourseApi>> Get()
+        public IEnumerable<CourseApi>? Get()
         {
-            this._logger.LogInformation("Api -> Course -> Get");
+            _logger.LogInformation("Api -> Course -> Get");
 
-            IQueryable<Course> courses = this._courseRepository.Find();
-            courses = courses.Where(a => a.TeacherCourse.Any(b => b.TeacherId == this.userId));
+            if (!this.CheckUserAuth())
+                return null;
 
-            return await courses.Select(course => new CourseApi
-            {
-                id = course.Id,
-                Name = course.Name,
-                SubCourse = course.SubCourse,
-                Group = course.Group,
-                Level = course.Level,
-                Info = course.Info,
-                FirstDate = course.FirstDate,
-                LastDate = course.LastDate,
-                School = new SchoolApi
-                {
-                    id = course.School.Id,
-                    Slug = course.School.Slug,
-                    Name = course.School.Name,
-                }
-            }).ToListAsync();
+            return this.PhoenixUser?
+                .Courses
+                .Select(c => new CourseApi(c));
         }
 
         [HttpGet("{id}")]
-        public async Task<CourseApi> Get(int id)
+        public async Task<CourseApi?> GetAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get{id}");
+            _logger.LogInformation("Api -> Course -> Get {id}", id);
 
-            Course course  = await this._courseRepository.Find(id);
+            var course = await this.FindAsync(id);
+            if (course is null)
+                return null;
 
-            return new CourseApi
-            {
-                id = course.Id,
-                Name = course.Name,
-                SubCourse = course.SubCourse,
-                Group = course.Group,
-                Level = course.Level,
-                Info = course.Info,
-                FirstDate = course.FirstDate,
-                LastDate = course.LastDate,
-                School = new SchoolApi
-                {
-                    id = course.School.Id,
-                    Slug = course.School.Slug,
-                    Name = course.School.Name,
-                }
-            };
+            return new CourseApi(course);
         }
 
-        [HttpGet("{id}/Lecture")]
-        public async Task<IEnumerable<LectureApi>> GetLectures(int id)
+        [HttpGet("{id}/Lectures")]
+        public async Task<IEnumerable<LectureApi>?> GetLecturesAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Lecture");
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Lectures", id);
 
-            IQueryable<Lecture> lectures = this._lectureRepository.Find().Where(a => a.CourseId == id);
-            lectures = lectures.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
-
-            return await lectures.Select(lecture => new LectureApi
-            {
-                id = lecture.Id,
-                Status = lecture.Status,
-                StartDateTime = lecture.StartDateTime,
-                EndDateTime = lecture.EndDateTime,
-                Info = lecture.Info,
-                Classroom = new ClassroomApi
-                {
-                    id = lecture.Classroom.Id,
-                    Name = lecture.Classroom.Name,
-                    Info = lecture.Classroom.Info
-                },
-                Exam = lecture.Exam != null ? new ExamApi
-                {
-                    id = lecture.Exam.Id,
-                    Name = lecture.Exam.Name,
-                    Comments = lecture.Exam.Comments,
-                } : null,
-                Exercises = lecture.Exercise.Select(a => new ExerciseApi
-                {
-                    id = a.Id,
-                    Name = a.Name,
-                }).ToList(),
-            }).ToListAsync();
+            var course = await this.FindAsync(id);
+            return course?.Lectures
+                .Select(l => new LectureApi(l));
         }
 
-        [HttpGet("{id}/Schedule")]
-        public async Task<IEnumerable<ScheduleApi>> GetSchedules(int id)
+        [HttpGet("{id}/Schedules")]
+        public async Task<IEnumerable<ScheduleApi>?> GetSchedulesAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Schedule");
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Schedules", id);
 
-            IQueryable<Schedule> schedules = this._scheduleRepository.Find().Where(a => a.CourseId == id);
-            schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
-
-            return await schedules.Select(schedule => new ScheduleApi
-            {
-                id = schedule.Id,
-                DayOfWeek = schedule.DayOfWeek,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                Info = schedule.Info,
-                Classroom = new ClassroomApi
-                {
-                    id = schedule.Classroom.Id,
-                    Name = schedule.Classroom.Name,
-                    Info = schedule.Classroom.Info
-                },
-            }).ToListAsync();
+            var course = await this.FindAsync(id);
+            return course?.Schedules
+                .Select(s => new ScheduleApi(s));
         }
 
-        [HttpGet("{id}/Book")]
-        public async Task<IEnumerable<BookApi>> GetBooks(int id)
+        [HttpGet("{id}/Books")]
+        public async Task<IEnumerable<BookApi>?> GetBooksAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Course -> Get -> {id} -> Book");
+            _logger.LogInformation("Api -> Course -> Get -> {id} -> Books", id);
 
-            IQueryable<Book> books = this._bookRepository.Find().Where(a => a.CourseBook.Any(b => b.CourseId == id));
-            books = books.Where(a => a.CourseBook.Any(c => c.Course.TeacherCourse.Any(b => b.TeacherId == this.userId)));
-
-            return await books.Select(book => new BookApi
-            {
-                id = book.Id,
-                Name = book.Name,
-                Publisher = book.Publisher,
-                Info = book.Info
-            }).ToListAsync();
+            var course = await this.FindAsync(id);
+            return course?.Books
+                .Select(b => new BookApi(b));
         }
-
-
-
     }
 }

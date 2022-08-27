@@ -1,232 +1,175 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.App_Plugins;
 using Phoenix.Api.Models;
-using Phoenix.Api.Models.Api;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
 using Phoenix.DataHandle.Identity;
-using Phoenix.DataHandle.Main.Entities;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
-using Phoenix.DataHandle.Sms;
+using Phoenix.DataHandle.Senders;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [ApiController]
     [Route("api/[controller]")]
-    public class AccountController : BaseController
+    public class AccountController : ApplicationController
     {
-        private readonly static TimeSpan pinCodeExpiration = new TimeSpan(-1, 0, 0);
+        private readonly static TimeSpan pinCodeExpiration = new(0, 10, 0);
 
-        private readonly ILogger<AccountController> _logger;
-        private readonly AspNetUserRepository _aspNetUserRepository;
-        private readonly ApplicationUserManager _userManager;
-        private readonly ISmsService _smsService;
+        private readonly OneTimeCodeRepository _otcRepository;
+        private readonly SmsSender _smsSender;
 
-        public AccountController(ApplicationUserManager userManager, PhoenixContext phoenixContext, ISmsService smsService, ILogger<AccountController> logger) : base(phoenixContext, logger)
+        public AccountController(
+            SmsSender smsSender,
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<AccountController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._aspNetUserRepository = new AspNetUserRepository(phoenixContext);
-            this._smsService = smsService;
-            this._userManager = userManager;
-            this._aspNetUserRepository.Include(a => a.Include(b => b.User));
+            _otcRepository = new(phoenixContext);
+            _smsSender = smsSender;
         }
 
         [HttpGet("me")]
-        public async Task<IUser> Me()
+        public async Task<UserApi?> MeAsync()
         {
-            this._logger.LogInformation("Api -> Account -> Me");
+            _logger.LogInformation("Api -> Account -> Me");
 
-            if(!this.userId.HasValue)
-                throw new InvalidOperationException("AspNetUser is not authorized.");
+            if (!this.CheckUserAuth())
+                return null;
 
-            User user = (await this._aspNetUserRepository.Find().SingleAsync(a => a.Id == this.userId.Value)).User;
+            User user = (await _userRepository.FindPrimaryAsync(AppUser!.Id))!;
 
-            return new UserApi
-            {
-                id = user.AspNetUserId,
-                LastName = user.LastName,
-                FirstName = user.FirstName,
-                FullName = user.FullName,
-                AspNetUser = new AspNetUserApi
-                {
-                    id = user.AspNetUser.Id,
-                    UserName = user.AspNetUser.UserName,
-                    Email = user.AspNetUser.Email,
-                    PhoneNumber = user.AspNetUser.PhoneNumber,
-                    RegisteredAt = user.AspNetUser.RegisteredAt,
-                    TeacherCourses = user.AspNetUser.TeacherCourse.Select(teacherCourse => new TeacherCourseApi
-                    {
-                        Course = new CourseApi
-                        {
-                            id = teacherCourse.Course.Id,
-                            Name = teacherCourse.Course.Name
-                        }
-                    }).ToList()
-                }
-            };
+            return new UserApi(user);
         }
 
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] AccountChangePassword accountChangePassword)
+        public async Task<IActionResult> ChangePasswordAsync(AccountChangePassword changePasswordModel)
         {
-            this._logger.LogInformation("Api -> Account -> ChangePassword");
+            _logger.LogInformation("Api -> Account -> ChangePassword");
 
-            if (accountChangePassword == null)
-                throw new ArgumentNullException(nameof(accountChangePassword));
+            if (changePasswordModel is null)
+                return BadRequest(nameof(changePasswordModel) + " argument cannot be null.");
+            if (!this.CheckUserAuth())
+                return Unauthorized();
 
-            if (!this.userId.HasValue)
-                throw new InvalidOperationException("AspNetUser is not authorized.");
-
-            ApplicationUser applicationUser = await this._userManager.FindByIdAsync(this.userId.Value.ToString(CultureInfo.InvariantCulture));
-
-            IdentityResult result = await this._userManager.ChangePasswordAsync(applicationUser, accountChangePassword.oldPassword, accountChangePassword.newPassword);
+            IdentityResult result = await _userManager.ChangePasswordAsync(
+                this.AppUser!, changePasswordModel.OldPassword, changePasswordModel.NewPassword);
 
             if (!result.Succeeded)
             {
-                this._logger.LogError(string.Join(", ", result.Errors.Select(a => $"{a.Code}: {a.Description}")));
-                return this.BadRequest(new
+                _logger.LogError("{Errors}", 
+                    string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    code = string.Join(", ", result.Errors.Select(a => a.Code)),
-                    message = $"Could not change password: {string.Join(", ", result.Errors.Select(a => a.Description))}"
+                    error_code = string.Join(", ", result.Errors.Select(a => a.Code)),
+                    error_message = $"Could not change password: " +
+                        $"{string.Join(", ", result.Errors.Select(a => a.Description))}"
                 });
             }
 
-            return this.Ok();
+            return Ok();
         }
 
         [AllowAnonymous]
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] AccountResetPassword accountResetPassword)
+        public async Task<IActionResult> ResetPasswordAsync(AccountResetPassword resetPasswordModel)
         {
-            this._logger.LogInformation("Api -> Account -> ResetPassword");
+            _logger.LogInformation("Api -> Account -> ResetPassword");
 
-            if (accountResetPassword == null)
-                throw new ArgumentNullException(nameof(accountResetPassword));
+            if (resetPasswordModel is null)
+                return BadRequest(nameof(resetPasswordModel) + " argument cannot be null.");
 
-            if (accountResetPassword.id == default(uint) || string.IsNullOrWhiteSpace(accountResetPassword.token) || string.IsNullOrWhiteSpace(accountResetPassword.newPassword))
-                throw new InvalidOperationException("There is an empty parameter.");
+            var appUser = await _userManager.FindByIdAsync(resetPasswordModel.Id.ToString());
+            if (appUser is null)
+                return BadRequest($"Could not find a user with ID {resetPasswordModel.Id}");
 
-
-            AspNetUsers userT = this._aspNetUserRepository.Find().FirstOrDefault(a => a.Id == accountResetPassword.id);
-            if (userT == null)
-                throw new InvalidOperationException($"Could not find user by bid: {accountResetPassword.id}.");
-
-            ApplicationUser applicationUser = await this._userManager.FindByIdAsync(userT.Id.ToString());
-            if (applicationUser == null)
-                throw new InvalidOperationException($"Could not find user by id.");
-
-            IdentityResult result = await this._userManager.ResetPasswordAsync(applicationUser, accountResetPassword.token, accountResetPassword.newPassword);
+            IdentityResult result = await _userManager.ResetPasswordAsync(appUser, resetPasswordModel.Token, resetPasswordModel.NewPassword);
             if (!result.Succeeded)
-                throw new InvalidOperationException($"Could not generate reset password, error: {string.Join(", ", result.Errors)}.");
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Could not generate reset password, error: {string.Join(", ", result.Errors)}.");
 
-            return this.Ok(new 
+            return Ok(new
             {
-                id = applicationUser.Id,
-                userName = applicationUser.UserName,
-                phoneNumber = applicationUser.PhoneNumber
+                id = appUser.Id,
+                username = appUser.UserName,
+                phone = appUser.PhoneNumber
             });
         }
 
         [AllowAnonymous]
-        [HttpPost("sendPhoneNumberConfirmation")]
-        public async Task<IActionResult> SendPhoneNumberConfirmation([FromBody] AccountSendPhoneNumberConfirmation accountSendPhoneNumberConfirmationRpc)
+        [HttpPost("verification/send-otc")]
+        public async Task<IActionResult> SendVerificationOTCAsync(
+            AccountSendVerificationOTC sendVerificationOTCModel)
         {
-            this._logger.LogInformation("Api -> Account -> SendPhoneNumberConfirmation");
+            _logger.LogInformation("Api -> Account -> Verification -> SendOTC");
 
-            if (accountSendPhoneNumberConfirmationRpc == null)
-                throw new ArgumentNullException(nameof(accountSendPhoneNumberConfirmationRpc));
+            if (sendVerificationOTCModel is null)
+                return BadRequest(nameof(sendVerificationOTCModel) + " argument cannot be null.");
 
-            if (string.IsNullOrWhiteSpace(accountSendPhoneNumberConfirmationRpc.phoneNumber))
-                throw new InvalidOperationException($"There is an empty parameter.");
+            var appUser = await _userManager.FindByPhoneNumberAsync(sendVerificationOTCModel.PhoneNumber);
+            if (appUser is null)
+                return BadRequest($"Could not find a user with phone number {sendVerificationOTCModel.PhoneNumber}");
 
-            try
+            OneTimeCode otc = new()
             {
-                ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber);
-                if (applicationUser == null)
-                    throw new InvalidOperationException($"Could not find user by phone number.");
+                UserId = appUser.Id,
+                Purpose = DataHandle.Main.Types.OneTimeCodePurpose.Verification,
+                Token = new Random().Next(1111, 10000).ToString(),
+                ExpiresAt = DateTime.UtcNow.Add(pinCodeExpiration)
+            };
+            otc = await _otcRepository.CreateAsync(otc);
 
-                Random rnd = new Random();
-                int pinCode = rnd.Next(1, 10000);
+            await _smsSender.SendAsync(sendVerificationOTCModel.PhoneNumber,
+                "Χρησιμοποιήστε το παρακάτω pin για την επαλήθευσή σας" +
+                $" στο εργαλείο καθηγητών εντός 10 λεπτών: {otc.Token}");
 
-                AspNetUsers aspNetUser = await this._aspNetUserRepository.Find(applicationUser.Id);
-                aspNetUser.PhoneNumberVerificationCode = pinCode.ToString("0000");
-                aspNetUser.PhoneNumberVerificationCode_at = DateTime.Now;
-                aspNetUser = this._aspNetUserRepository.Update(aspNetUser);
-
-                await this._smsService.SendAsync(accountSendPhoneNumberConfirmationRpc.phoneNumber, $"Χρησιμοποιήστε τον κωδικό επαλήθευσης {pinCode:0000} για τον έλεγχο ταυτότητας σας.");
-
-                return this.Ok();
-            }
-            catch (Exception ex)
-            {
-                this._logger.LogError(ex, ex.Message);
-                throw;
-            }
+            return Ok();
         }
 
         [AllowAnonymous]
-        [HttpPost("verifyPhoneNumberConfirmation")]
-        public async Task<IActionResult> VerifyPhoneNumberConfirmation([FromBody] AccountVerifyPhoneNumberConfirmation accountVerifyPhoneNumberConfirmation)
+        [HttpPost("verification/check-otc")]
+        public async Task<IActionResult> CheckVerificationOTCAsync(
+            AccountCheckVerificationOTC checkVerificationOTCModel)
         {
-            this._logger.LogInformation("Api -> Account -> VerifyPhoneNumberConfirmation");
+            _logger.LogInformation("Api -> Account -> -> Verification -> CheckOTC");
 
-            if (accountVerifyPhoneNumberConfirmation == null)
-                throw new ArgumentNullException(nameof(accountVerifyPhoneNumberConfirmation));
+            if (checkVerificationOTCModel is null)
+                return BadRequest(nameof(checkVerificationOTCModel) + " argument cannot be null.");
 
-            if (string.IsNullOrEmpty(accountVerifyPhoneNumberConfirmation.phoneNumber) || string.IsNullOrEmpty(accountVerifyPhoneNumberConfirmation.pinCode))
-                throw new InvalidOperationException("There is an empty parameter.");
+            var appUser = await _userManager.FindByPhoneNumberAsync(checkVerificationOTCModel.PhoneNumber);
+            if (appUser is null)
+                return BadRequest($"Could not find a user with phone number {checkVerificationOTCModel.PhoneNumber}.");
 
-            try
+            User user = (await _userRepository.FindPrimaryAsync(appUser.Id))!;
+            var userValidOTCs = user.OneTimeCodes
+                .Where(c => c.ExpiresAt >= DateTime.UtcNow);
+
+            if (!userValidOTCs.Any(c => c.Token == checkVerificationOTCModel.PinCode))
+                return BadRequest($"Pin code is incorrect or has expired");
+
+            appUser.PhoneNumberConfirmed = true;
+            await _userManager.UpdateAsync(appUser);
+
+            string? generatedResetPassword = null;
+            if (checkVerificationOTCModel.RequestPasswordResetToken)
             {
-                ApplicationUser applicationUser = await this._userManager.FindByPhoneNumberAsync(accountVerifyPhoneNumberConfirmation.phoneNumber);
-                if (applicationUser == null)
-                    throw new InvalidOperationException($"Could not find user by phone number: {accountVerifyPhoneNumberConfirmation.phoneNumber}.");
-
-                AspNetUsers aspNetUser = await this._aspNetUserRepository.Find(applicationUser.Id);
-
-                if (aspNetUser.PhoneNumberVerificationCode.ToUpperInvariant() != accountVerifyPhoneNumberConfirmation.pinCode.ToUpperInvariant())
-                    throw new InvalidOperationException($"Pin code is incorrect.");
-
-                if (aspNetUser.PhoneNumberVerificationCode_at < DateTime.Now.Add(pinCodeExpiration))
-                    throw new InvalidOperationException($"Pin code is expired.");
-
-                aspNetUser.PhoneNumberConfirmed = true;
-                this._aspNetUserRepository.Update(aspNetUser);
-
-                string generatedResetPassword = null;
-                if (accountVerifyPhoneNumberConfirmation.requestPasswordResetToken)
-                {
-                    generatedResetPassword = await this._userManager.GeneratePasswordResetTokenAsync(applicationUser);
-                    if (string.IsNullOrWhiteSpace(generatedResetPassword))
-                        throw new InvalidOperationException($"Could not generate reset password.");
-                }
-
-                return this.Ok(new
-                {
-                    id = aspNetUser.Id,
-                    userName = aspNetUser.UserName,
-                    phoneNumber = aspNetUser.PhoneNumber,
-                    resetPasswordToken = generatedResetPassword
-                });
+                generatedResetPassword = await _userManager.GeneratePasswordResetTokenAsync(appUser);
+                if (string.IsNullOrWhiteSpace(generatedResetPassword))
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                        "Could not generate reset password");
             }
-            catch (Exception ex)
+
+            return Ok(new
             {
-                this._logger.LogError(ex, ex.Message);
-                throw;
-            }
+                id = appUser.Id,
+                username = appUser.UserName,
+                phone = appUser.PhoneNumber,
+                resetPasswordToken = generatedResetPassword
+            });
         }
-
-
-
-
-
     }
 }

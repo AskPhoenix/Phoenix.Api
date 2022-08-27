@@ -1,97 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Phoenix.Api.Models.Api;
-using Phoenix.DataHandle.Main.Entities;
+using Phoenix.DataHandle.Api;
+using Phoenix.DataHandle.Api.Models;
+using Phoenix.DataHandle.Identity;
 using Phoenix.DataHandle.Main.Models;
 using Phoenix.DataHandle.Repositories;
 
 namespace Phoenix.Api.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
-    public class ScheduleController : BaseController
+    public class ScheduleController : ApplicationController
     {
-        private readonly ILogger<ScheduleController> _logger;
-        private readonly Repository<Schedule> _scheduleRepository;
+        private readonly ScheduleRepository _scheduleRepository;
 
-        public ScheduleController(PhoenixContext phoenixContext, ILogger<ScheduleController> logger) : base(phoenixContext, logger)
+        public ScheduleController(
+            PhoenixContext phoenixContext,
+            ApplicationUserManager userManager,
+            ILogger<ScheduleController> logger)
+            : base(phoenixContext, userManager, logger)
         {
-            this._logger = logger;
-            this._scheduleRepository = new Repository<Schedule>(phoenixContext);
+            _scheduleRepository = new(phoenixContext, nonObviatedOnly: true);
         }
 
         [HttpGet]
-        public async Task<IEnumerable<ISchedule>> Get()
+        public IEnumerable<ScheduleApi>? Get()
         {
-            this._logger.LogInformation("Api -> Schedule -> Get");
+            _logger.LogInformation("Api -> Schedule -> Get");
 
-            IQueryable<Schedule> schedules = this._scheduleRepository.Find();
-            schedules = schedules.Where(a => a.Course.TeacherCourse.Any(b => b.TeacherId == this.userId));
+            if (!this.CheckUserAuth())
+                return null;
 
-            return await schedules.Select(schedule => new ScheduleApi
-            {
-                id = schedule.Id,
-                DayOfWeek = schedule.DayOfWeek,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                Course = new CourseApi
-                {
-                    id = schedule.Course.Id,
-                    Name = schedule.Course.Name,
-                    SubCourse = schedule.Course.SubCourse,
-                    Level = schedule.Course.Level,
-                    Group = schedule.Course.Group,
-                    Info = schedule.Course.Info,
-                    FirstDate = schedule.Course.FirstDate,
-                    LastDate = schedule.Course.LastDate,
-                },
-                Classroom = new ClassroomApi
-                {
-                    id = schedule.Classroom.Id,
-                    Name = schedule.Classroom.Name,
-                    Info = schedule.Classroom.Info
-                },
-            }).ToListAsync();
+            return this.PhoenixUser?.Courses
+                .SelectMany(c => c.Schedules)
+                .Select(s => new ScheduleApi(s));
         }
 
         [HttpGet("{id}")]
-        public async Task<ISchedule> Get(int id)
+        public async Task<ScheduleApi?> GetAsync(int id)
         {
-            this._logger.LogInformation($"Api -> Schedule -> Get{id}");
+            _logger.LogInformation("Api -> Schedule -> Get {id}", id);
 
-            Schedule schedule = await this._scheduleRepository.Find(id);
+            if (!this.CheckUserAuth())
+                return null;
 
-            return new ScheduleApi
+            var schedule = await _scheduleRepository.FindPrimaryAsync(id);
+            if (schedule is null)
+                return null;
+
+            if (!schedule.Course.Users.Any(u => u.AspNetUserId == this.AppUser!.Id))
             {
-                id = schedule.Id,
-                DayOfWeek = schedule.DayOfWeek,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                Course = new CourseApi
-                {
-                    id = schedule.Course.Id,
-                    Name = schedule.Course.Name,
-                    SubCourse = schedule.Course.SubCourse,
-                    Level = schedule.Course.Level,
-                    Group = schedule.Course.Group,
-                    Info = schedule.Course.Info,
-                    FirstDate = schedule.Course.FirstDate,
-                    LastDate = schedule.Course.LastDate,
-                },
-                Classroom = new ClassroomApi
-                {
-                    id = schedule.Classroom.Id,
-                    Name = schedule.Classroom.Name,
-                    Info = schedule.Classroom.Info
-                },
-            };
-        }
+                _logger.LogError("User with id {UserId} " +
+                    "is not authorized to access schedule with id {id}", id);
+                return null;
+            }
 
+            return new ScheduleApi(schedule);
+        }
     }
 }
